@@ -277,6 +277,13 @@ let gpsOn = false, gpsWatch = null, gpsMarker = null;
 let pwCallback = null, expectedPw = null;
 let expandedId = null;      // currently expanded route id in accordion
 const mapData = {};         // {emdName: {routes[], layers[], color}}
+/* 기기 고유 ID (GPS 공유용) */
+const deviceId = (() => {
+  let id = localStorage.getItem('wdevid');
+  if(!id){ id = 'd'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); localStorage.setItem('wdevid',id); }
+  return id;
+})();
+const workerMarkers = {};   // {deviceId: L.Marker}
 
 /* ═══ FIREBASE ═══ */
 firebase.initializeApp(FB_CFG);
@@ -504,8 +511,24 @@ document.getElementById('route-list').addEventListener('click', e=>{
   }
 });
 
+/* 잠금 해제 공통 함수 */
+function doUnlock(){
+  isLocked=false;
+  document.getElementById('lock-btn').textContent='🔓 해제됨';
+  document.getElementById('lock-btn').classList.add('active');
+}
+
 function toggleRoute(id){
-  if(isLocked){ openPw(()=>toggleRoute(id), curEmd); return; }
+  if(isLocked){
+    if(!curEmd){showErr('먼저 담당 읍면동을 선택하세요');return;}
+    const snapEmd = curEmd; // 모달 열리는 시점의 읍면동 캡처
+    openPw(()=>{ doUnlock(); doToggleRoute(id); }, snapEmd);
+    return;
+  }
+  doToggleRoute(id);
+}
+
+function doToggleRoute(id){
   const prev = expandedId;
   /* 이전 항목 닫기 */
   if(prev!==null){
@@ -558,26 +581,66 @@ function updateDetProgress(){
 
 function sLabel(s){return s==='waiting'?'대기':s==='working'?'작업중':'완료';}
 
-/* ═══ GPS ═══ */
+/* ═══ GPS (Firebase 실시간 공유) ═══ */
+function updateWorkerMarker(id, w){
+  if(!w||w.lat==null) return;
+  const isMe = id===deviceId;
+  const col = isMe ? '#3b82f6' : '#f59e0b';
+  const icon = L.divIcon({
+    className:'',
+    html:`<div style="background:${col};color:#fff;font-size:10px;font-weight:800;`+
+         `padding:3px 8px;border-radius:12px;white-space:nowrap;`+
+         `box-shadow:0 2px 8px rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.3)">`+
+         `${w.name||'담당자'}${isMe?' (나)':''}</div>`,
+    iconAnchor:[0,10],
+  });
+  if(workerMarkers[id]){
+    workerMarkers[id].setLatLng([w.lat,w.lng]).setIcon(icon);
+  } else {
+    workerMarkers[id]=L.marker([w.lat,w.lng],{icon,zIndexOffset:500}).addTo(map);
+    if(isMe) map.panTo([w.lat,w.lng]);
+  }
+}
+
+function listenWorkers(){
+  rtdb.ref('workers').on('child_added',  s=>updateWorkerMarker(s.key,s.val()));
+  rtdb.ref('workers').on('child_changed', s=>updateWorkerMarker(s.key,s.val()));
+  rtdb.ref('workers').on('child_removed', s=>{
+    if(workerMarkers[s.key]){ map.removeLayer(workerMarkers[s.key]); delete workerMarkers[s.key]; }
+  });
+}
+
 document.getElementById('gps-btn').addEventListener('click',()=>{
   if(gpsOn){
     gpsOn=false;
     document.getElementById('gps-btn').textContent='📍 위치';
     document.getElementById('gps-btn').classList.remove('active');
     if(gpsWatch!=null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;}
-    if(gpsMarker){map.removeLayer(gpsMarker);gpsMarker=null;}
+    // Firebase에서 내 위치 삭제
+    rtdb.ref('workers/'+deviceId).remove();
     return;
   }
   if(!navigator.geolocation){showErr('위치 서비스 미지원');return;}
   gpsOn=true;
   document.getElementById('gps-btn').textContent='📍 ON';
   document.getElementById('gps-btn').classList.add('active');
+  // 연결 끊기면 자동 삭제
+  rtdb.ref('workers/'+deviceId).onDisconnect().remove();
   gpsWatch=navigator.geolocation.watchPosition(pos=>{
-    const ll=[pos.coords.latitude,pos.coords.longitude];
-    if(gpsMarker) gpsMarker.setLatLng(ll);
-    else gpsMarker=L.circleMarker(ll,{radius:8,color:'#3b82f6',fillColor:'#3b82f6',fillOpacity:.85}).addTo(map);
-    if(!gpsMarker._prevSet){map.panTo(ll);gpsMarker._prevSet=true;}
-  },()=>{showErr('위치를 가져올 수 없습니다');gpsOn=false;document.getElementById('gps-btn').textContent='📍 위치';document.getElementById('gps-btn').classList.remove('active');},{enableHighAccuracy:true});
+    // Firebase에 위치 저장 → 모든 기기에서 실시간으로 볼 수 있음
+    rtdb.ref('workers/'+deviceId).set({
+      lat:pos.coords.latitude,
+      lng:pos.coords.longitude,
+      name:workerName||'담당자',
+      updatedAt:Date.now()
+    });
+  },()=>{
+    showErr('위치를 가져올 수 없습니다');
+    gpsOn=false;
+    document.getElementById('gps-btn').textContent='📍 위치';
+    document.getElementById('gps-btn').classList.remove('active');
+    rtdb.ref('workers/'+deviceId).remove();
+  },{enableHighAccuracy:true});
 });
 
 /* ═══ LOCK ═══ */
@@ -585,11 +648,7 @@ document.getElementById('lock-btn').addEventListener('click',()=>{
   if(isLocked){
     if(!curEmd){showErr('먼저 담당 읍면동을 선택하세요');return;}
     const emdForLock = curEmd;
-    openPw(()=>{
-      isLocked=false;
-      document.getElementById('lock-btn').textContent='🔓 해제됨';
-      document.getElementById('lock-btn').classList.add('active');
-    }, emdForLock);
+    openPw(()=>doUnlock(), emdForLock);
   }else{
     isLocked=true;
     document.getElementById('lock-btn').textContent='🔒 잠김';
@@ -640,6 +699,8 @@ function confirmName(){
   localStorage.setItem('wname',v);
   document.getElementById('name-label').textContent=v;
   document.getElementById('modal-name').hidden=true;
+  // GPS ON 중이면 Firebase 이름도 갱신
+  if(gpsOn) rtdb.ref('workers/'+deviceId+'/name').set(v);
 }
 document.getElementById('name-ok').addEventListener('click',confirmName);
 document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmName();});
@@ -666,6 +727,7 @@ renderHub();
 loadAllGeo().then(()=>{
   attachAllFirebase();
 });
+listenWorkers(); // 모든 담당자 위치 실시간 감지 시작
 </script>
 </body>
 </html>
