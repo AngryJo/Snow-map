@@ -279,7 +279,7 @@ const FB_CFG = {
 let curEmd = null;          // null = hub mode
 let isLocked = true;
 let workerName = localStorage.getItem('wname') || '';
-let gpsOn = false, gpsWatch = null, gpsMarker = null;
+let gpsOn = false, gpsWatch = null, gpsMarker = null, gpsHeartbeat = null;
 let pwCallback = null, expectedPw = null;
 let expandedId = null;      // currently expanded route id in accordion
 const mapData = {};         // {emdName: {routes[], layers[], color}}
@@ -376,13 +376,19 @@ function attachAllFirebase(){
       }
       /* update hub card */
       const all = Object.values(data);
+      const total = md?.routes.length || 0;  // GeoJSON 기준 전체 노선 수
       const done = all.filter(r=>r.status==='done').length;
-      const pct = all.length?Math.round(done/all.length*100):0;
+      const pct = total?Math.round(done/total*100):0;
       const pb = document.getElementById('pb-'+emd.name);
       const pt = document.getElementById('pct-'+emd.name);
       if(pb) pb.style.width=pct+'%';
-      if(pt) pt.textContent=pct+'% ('+done+'/'+all.length+')';
-      if(pt) pt.style.color = pct===100?'var(--green)':pct>0?'var(--orange)':'var(--sub)';
+      if(pt){
+        pt.textContent = total
+          ? (pct===100 ? `✅ 전체 완료 (${total}/${total})`
+                       : `완료 ${done}/${total} · ${pct}%`)
+          : '대기 중';
+        pt.style.color = pct===100?'var(--green)':pct>0?'var(--orange)':'var(--sub)';
+      }
       /* update det panel if open */
       if(curEmd===emd.name){
         updateDetProgress();
@@ -579,17 +585,28 @@ function updateRouteItemDOM(r){
 function updateDetProgress(){
   if(!curEmd||!mapData[curEmd]) return;
   const routes = mapData[curEmd].routes;
+  const total = routes.length;
   const done = routes.filter(r=>r.status==='done').length;
-  const pct = routes.length?Math.round(done/routes.length*100):0;
+  const pct = total?Math.round(done/total*100):0;
   document.getElementById('prog-bar').style.width=pct+'%';
-  document.getElementById('prog-text').textContent=pct+'% ('+done+'/'+routes.length+')';
+  document.getElementById('prog-text').textContent=
+    pct===100 ? `✅ 전체 완료 (${total}/${total})`
+              : `완료 ${done}/${total} · ${pct}%`;
 }
 
 function sLabel(s){return s==='waiting'?'대기':s==='working'?'작업중':'완료';}
 
 /* ═══ GPS (Firebase 실시간 공유) ═══ */
+const STALE_MS = 15 * 60 * 1000; // 15분 이상 업데이트 없으면 오프라인 처리
+
 function updateWorkerMarker(id, w){
   if(!w||w.lat==null) return;
+  /* 오래된 위치는 Firebase에서 자동 삭제 후 무시 */
+  if(w.updatedAt && Date.now() - w.updatedAt > STALE_MS){
+    rtdb.ref('workers/'+id).remove();
+    if(workerMarkers[id]){ map.removeLayer(workerMarkers[id]); delete workerMarkers[id]; }
+    return;
+  }
   const isMe = id===deviceId;
   const col = isMe ? '#3b82f6' : '#f59e0b';
   const icon = L.divIcon({
@@ -622,6 +639,7 @@ document.getElementById('gps-btn').addEventListener('click',()=>{
     document.getElementById('gps-btn').textContent='📍 위치';
     document.getElementById('gps-btn').classList.remove('active');
     if(gpsWatch!=null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;}
+    if(gpsHeartbeat!=null){clearInterval(gpsHeartbeat);gpsHeartbeat=null;}
     // Firebase에서 내 위치 삭제
     rtdb.ref('workers/'+deviceId).remove();
     return;
@@ -647,8 +665,13 @@ document.getElementById('gps-btn').addEventListener('click',()=>{
     gpsOn=false;
     document.getElementById('gps-btn').textContent='📍 위치';
     document.getElementById('gps-btn').classList.remove('active');
+    if(gpsHeartbeat!=null){clearInterval(gpsHeartbeat);gpsHeartbeat=null;}
     rtdb.ref('workers/'+deviceId).remove();
   },{enableHighAccuracy:true});
+  // 1분마다 updatedAt 갱신 (위치 안 움직여도 "온라인" 상태 유지)
+  gpsHeartbeat = setInterval(()=>{
+    if(gpsOn) rtdb.ref('workers/'+deviceId+'/updatedAt').set(Date.now());
+  }, 60000);
 });
 
 /* ═══ LOCK ═══ */
