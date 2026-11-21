@@ -69,8 +69,21 @@ input{font-family:inherit}
 .drag-handle{width:32px;height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin:7px auto 3px}
 
 /* HUB PANEL */
-#hub-panel{padding:0 8px 10px}
-#emd-grid{
+#hub-panel{padding:0}
+#hub-actions{display:flex;gap:8px;padding:10px 12px 8px;border-bottom:1px solid rgba(26,46,74,.4)}
+.reset-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:7px 12px;border-radius:9px;font-size:.75rem;font-weight:700;
+  background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.4);color:var(--red);
+}
+.reset-btn:hover{background:rgba(239,68,68,.18)}
+#reset-emd-btn{
+  background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.35);
+  color:var(--red);font-size:.68rem;font-weight:700;
+  padding:3px 9px;border-radius:7px;flex-shrink:0;
+}
+#reset-emd-btn:hover{background:rgba(239,68,68,.2)}
+#emd-grid{padding:8px 8px 10px;
   display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
   max-height:38vh;overflow-y:auto;padding:2px 0;
 }
@@ -228,6 +241,9 @@ input{font-family:inherit}
 
   <!-- Hub: area grid -->
   <div id="hub-panel">
+    <div id="hub-actions">
+      <button class="reset-btn" id="reset-all-btn">🔄 전체 초기화</button>
+    </div>
     <div id="emd-grid"></div>
   </div>
 
@@ -236,6 +252,7 @@ input{font-family:inherit}
     <div class="det-header">
       <div id="det-nm"></div>
       <div id="prog-text"></div>
+      <button id="reset-emd-btn">🔄 초기화</button>
     </div>
     <div class="prog-wrap"><div id="prog-bar" style="width:0%"></div></div>
     <div id="route-list"></div>
@@ -259,6 +276,16 @@ input{font-family:inherit}
     <input type="text" id="name-input" placeholder="이름 입력">
     <button class="modal-btn primary" id="name-ok">확인</button>
     <button class="modal-btn secondary" id="name-cancel">취소</button>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-bg" id="modal-confirm" hidden>
+  <div class="modal-box">
+    <h3 id="confirm-title">확인</h3>
+    <p id="confirm-msg" style="font-size:.8rem;color:var(--sub);margin-bottom:14px;line-height:1.6"></p>
+    <button class="modal-btn primary" id="confirm-ok">확인</button>
+    <button class="modal-btn secondary" id="confirm-cancel">취소</button>
   </div>
 </div>
 
@@ -290,6 +317,7 @@ const PW = {
   '대신면':'eotls3948!',   '북내면':'qnrso3967!',   '강천면':'rkdcjs3997!',
   '여흥동':'dugmd3772!',   '중앙동':'wnddkd3412!',  '오학동':'dhgkr3974!',
 };
+const ADMIN_PW = 'ehfhrhksfl!'; // 도로관리팀 전체 권한
 const COLORS = [
   '#FF3D00','#FF9100','#FFD600','#76FF03','#00E5FF','#D500F9',
   '#FF4081','#FF6D00','#AEEA00','#00B0FF','#E040FB','#00BFA5',
@@ -796,11 +824,16 @@ document.getElementById('lock-btn').addEventListener('click',()=>{
 });
 
 /* ═══ PW MODAL ═══ */
-function openPw(cb, forEmd){
+// validPws: 문자열 또는 배열 — 여러 비밀번호 중 하나면 통과
+function openPw(cb, forEmd, validPws){
   const emd = forEmd || curEmd;
   pwCallback = cb;
-  expectedPw = PW[emd] || null;   // 열릴 때 비밀번호를 직접 저장
-  document.querySelector('#modal-pw h3').textContent = '🔐 ' + (emd||'담당자') + ' 비밀번호';
+  expectedPw = validPws !== undefined ? validPws : (PW[emd] || null);
+  // 헤더 타이틀 결정
+  let label;
+  if(!forEmd && validPws) label = '도로관리팀';
+  else label = emd || '담당자';
+  document.querySelector('#modal-pw h3').textContent = '🔐 ' + label + ' 비밀번호';
   document.getElementById('pw-input').value='';
   document.getElementById('pw-input').placeholder='비밀번호 입력';
   document.getElementById('modal-pw').hidden=false;
@@ -808,7 +841,9 @@ function openPw(cb, forEmd){
 }
 function confirmPw(){
   const val = document.getElementById('pw-input').value;
-  if(expectedPw && val === expectedPw){
+  const ok = Array.isArray(expectedPw) ? expectedPw.includes(val)
+                                       : (expectedPw && val === expectedPw);
+  if(ok){
     document.getElementById('modal-pw').hidden=true;
     const cb=pwCallback; pwCallback=null; expectedPw=null;
     if(cb) cb();
@@ -818,6 +853,56 @@ function confirmPw(){
     setTimeout(()=>document.getElementById('pw-input').placeholder='비밀번호 입력',1800);
   }
 }
+
+/* ═══ CONFIRM MODAL ═══ */
+let confirmCallback = null;
+function openConfirm(title, msg, cb){
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  confirmCallback = cb;
+  document.getElementById('modal-confirm').hidden = false;
+}
+document.getElementById('confirm-ok').addEventListener('click',()=>{
+  document.getElementById('modal-confirm').hidden = true;
+  const cb = confirmCallback; confirmCallback = null;
+  if(cb) cb();
+});
+document.getElementById('confirm-cancel').addEventListener('click',()=>{
+  document.getElementById('modal-confirm').hidden = true;
+  confirmCallback = null;
+});
+
+/* ═══ 초기화 ═══ */
+function resetAllRoutes(){
+  openPw(()=>{
+    openConfirm('⚠️ 전체 초기화',
+      '모든 읍면동(세종대왕면·강천면·여흥동)의\n노선을 전부 대기 상태로 초기화합니다.\n계속하시겠습니까?',
+      ()=>{
+        const promises = EMD_LIST.filter(e=>e.ready)
+          .map(e => rtdb.ref('routes/'+e.name).remove());
+        Promise.all(promises).then(()=>showErr('✅ 전체 초기화 완료'));
+      }
+    );
+  }, null, [ADMIN_PW]);
+}
+
+function resetEmdRoutes(){
+  if(!curEmd) return;
+  const emd = curEmd;
+  const emdPw = PW[emd];
+  const validPws = emdPw ? [ADMIN_PW, emdPw] : [ADMIN_PW];
+  const doReset = ()=>{
+    openConfirm('⚠️ '+emd+' 초기화',
+      emd+'의 모든 노선을\n대기 상태로 초기화합니다.\n계속하시겠습니까?',
+      ()=>{ rtdb.ref('routes/'+emd).remove().then(()=>showErr('✅ '+emd+' 초기화 완료')); }
+    );
+  };
+  if(!isLocked){ doReset(); return; }  // 이미 인증된 경우 바로
+  openPw(doReset, emd, validPws);
+}
+
+document.getElementById('reset-all-btn').addEventListener('click', resetAllRoutes);
+document.getElementById('reset-emd-btn').addEventListener('click', resetEmdRoutes);
 document.getElementById('pw-ok').addEventListener('click',confirmPw);
 document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPw();});
 document.getElementById('pw-cancel').addEventListener('click',()=>{
