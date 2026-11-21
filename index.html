@@ -65,8 +65,25 @@ input{font-family:inherit}
   border-top:1px solid var(--border);
   border-radius:16px 16px 0 0;
   backdrop-filter:blur(12px);
+  transition:transform .32s cubic-bezier(.4,0,.2,1);
 }
-.drag-handle{width:32px;height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin:7px auto 3px}
+#bottom.collapsed{
+  transform:translateY(calc(100% - 44px));
+}
+.drag-handle-wrap{
+  display:flex;flex-direction:column;align-items:center;
+  padding:8px 0 5px;cursor:pointer;user-select:none;
+  border-bottom:1px solid transparent;transition:border-color .2s;
+}
+#bottom.collapsed .drag-handle-wrap{
+  border-bottom-color:rgba(26,46,74,.5);
+}
+.drag-handle{width:32px;height:3px;background:rgba(255,255,255,.18);border-radius:2px}
+.panel-arrow{
+  font-size:.6rem;color:var(--sub);margin-top:3px;
+  transition:transform .32s cubic-bezier(.4,0,.2,1);line-height:1;
+}
+#bottom.collapsed .panel-arrow{transform:rotate(180deg)}
 
 /* HUB PANEL */
 #hub-panel{padding:0}
@@ -237,7 +254,10 @@ input{font-family:inherit}
 
 <!-- BOTTOM PANEL -->
 <div id="bottom">
-  <div class="drag-handle"></div>
+  <div class="drag-handle-wrap" id="panel-toggle">
+    <div class="drag-handle"></div>
+    <div class="panel-arrow">▼</div>
+  </div>
 
   <!-- Hub: area grid -->
   <div id="hub-panel">
@@ -929,6 +949,16 @@ function confirmName(){
 document.getElementById('name-ok').addEventListener('click',confirmName);
 document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmName();});
 document.getElementById('name-cancel').addEventListener('click',()=>document.getElementById('modal-name').hidden=true);
+
+/* ═══ PANEL COLLAPSE ═══ */
+(function(){
+  const bottom = document.getElementById('bottom');
+  try{ if(localStorage.getItem('panelCollapsed')==='1') bottom.classList.add('collapsed'); }catch(e){}
+  document.getElementById('panel-toggle').addEventListener('click',()=>{
+    bottom.classList.toggle('collapsed');
+    try{ localStorage.setItem('panelCollapsed', bottom.classList.contains('collapsed')?'1':'0'); }catch(e){}
+  });
+})();
 
 /* ═══ BACK / CONN ═══ */
 document.getElementById('back-btn').addEventListener('click',goHub);
