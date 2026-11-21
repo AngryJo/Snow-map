@@ -66,6 +66,8 @@ input{font-family:inherit}
   border-radius:16px 16px 0 0;
   backdrop-filter:blur(12px);
   transition:transform .32s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+  max-height:65vh;overflow:hidden;
 }
 #bottom.collapsed{
   transform:translateY(calc(100% - 44px));
@@ -86,8 +88,17 @@ input{font-family:inherit}
 #bottom.collapsed .panel-arrow{transform:rotate(180deg)}
 
 /* HUB PANEL */
-#hub-panel{padding:0}
+#hub-panel{padding:0;display:flex;flex-direction:column;flex:1;overflow:hidden}
 #hub-actions{display:flex;gap:8px;padding:10px 12px 8px;border-bottom:1px solid rgba(26,46,74,.4)}
+/* PC: show reset btn in topbar, hide hub-actions reset */
+#reset-all-topbar{display:none;align-items:center;gap:5px;
+  padding:5px 10px;border-radius:8px;font-size:.7rem;font-weight:700;
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.5);color:var(--red);}
+#reset-all-topbar:hover{background:rgba(239,68,68,.22)}
+@media(min-width:600px){
+  #reset-all-topbar{display:flex}
+  #hub-actions{display:none}
+}
 .reset-btn{
   display:flex;align-items:center;gap:5px;
   padding:7px 12px;border-radius:9px;font-size:.75rem;font-weight:700;
@@ -100,9 +111,9 @@ input{font-family:inherit}
   padding:3px 9px;border-radius:7px;flex-shrink:0;
 }
 #reset-emd-btn:hover{background:rgba(239,68,68,.2)}
-#emd-grid{padding:8px 8px 10px;
+#emd-grid{
   display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
-  max-height:38vh;overflow-y:auto;padding:2px 0;
+  flex:1;overflow-y:auto;padding:8px 8px 12px;-webkit-overflow-scrolling:touch;
 }
 @media(min-width:600px){#emd-grid{grid-template-columns:repeat(4,1fr)}}
 @media(min-width:900px){#emd-grid{grid-template-columns:repeat(6,1fr)}}
@@ -246,6 +257,7 @@ input{font-family:inherit}
     <div id="top-title">🌨 여주시 제설 관리</div>
     <div id="top-sub">전체 노선 현황</div>
   </div>
+  <button id="reset-all-topbar">🔄 초기화</button>
   <button id="gps-btn" class="ctrl-btn">📍 위치</button>
   <button id="lock-btn" class="ctrl-btn">🔒 잠김</button>
   <button id="name-btn" class="ctrl-btn">✏️ <span id="name-label">이름</span></button>
@@ -952,13 +964,45 @@ document.getElementById('name-cancel').addEventListener('click',()=>document.get
 
 /* ═══ PANEL COLLAPSE ═══ */
 (function(){
-  const bottom = document.getElementById('bottom');
-  try{ if(localStorage.getItem('panelCollapsed')==='1') bottom.classList.add('collapsed'); }catch(e){}
-  document.getElementById('panel-toggle').addEventListener('click',()=>{
-    bottom.classList.toggle('collapsed');
+  const bottom  = document.getElementById('bottom');
+  const toggle  = document.getElementById('panel-toggle');
+  function saveCollapsed(){
     try{ localStorage.setItem('panelCollapsed', bottom.classList.contains('collapsed')?'1':'0'); }catch(e){}
+  }
+  try{ if(localStorage.getItem('panelCollapsed')==='1') bottom.classList.add('collapsed'); }catch(e){}
+
+  /* 스와이프 지원 */
+  let touchStartY = null;
+  let swipeHandled = false;
+  toggle.addEventListener('touchstart', e=>{
+    touchStartY = e.touches[0].clientY;
+    swipeHandled = false;
+  }, {passive:true});
+  toggle.addEventListener('touchmove', e=>{
+    /* 패널 내부 스크롤이 아닌 경우에만 처리 */
+  }, {passive:true});
+  toggle.addEventListener('touchend', e=>{
+    if(touchStartY === null) return;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    touchStartY = null;
+    if(Math.abs(dy) > 20){           /* 20px 이상 쓸면 스와이프로 판정 */
+      swipeHandled = true;
+      if(dy > 0) bottom.classList.add('collapsed');    /* 아래로 → 접기 */
+      else        bottom.classList.remove('collapsed'); /* 위로  → 펼치기 */
+      saveCollapsed();
+    }
+  }, {passive:true});
+
+  /* 클릭 (스와이프 후 발생하는 클릭 무시) */
+  toggle.addEventListener('click', ()=>{
+    if(swipeHandled){ swipeHandled=false; return; }
+    bottom.classList.toggle('collapsed');
+    saveCollapsed();
   });
 })();
+
+/* ═══ TOPBAR 전체초기화 버튼 (PC) ═══ */
+document.getElementById('reset-all-topbar').addEventListener('click', resetAllRoutes);
 
 /* ═══ BACK / CONN ═══ */
 document.getElementById('back-btn').addEventListener('click',goHub);
