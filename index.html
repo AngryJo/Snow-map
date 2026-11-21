@@ -769,6 +769,10 @@ html,body{
 .pfbtn:hover{background:rgba(255,255,255,.08);color:var(--text)}
 .pfbtn.gps-on{background:rgba(59,130,246,.2);border-color:var(--accent);color:#93c5fd}
 
+/* ── Lock button ── */
+.lock-btn{ flex:.5; }
+.lock-btn.unlocked{ background:rgba(16,185,129,.18); color:#10b981; border-color:#10b981; }
+
 /* ── Modals ── */
 .modal-bg{
   position:fixed;inset:0;background:rgba(0,0,0,.75);
@@ -861,6 +865,21 @@ html,body{
   <div id="panel-foot">
     <button class="pfbtn" id="gps-btn" onclick="toggleGps()">📍 위치 공유</button>
     <button class="pfbtn" onclick="zoomAll()" style="flex:.5">🗺️ 전체보기</button>
+    <button class="pfbtn lock-btn" id="lock-btn" onclick="toggleLock()">🔒 잠금</button>
+  </div>
+</div>
+
+<!-- Password modal -->
+<div class="modal-bg" id="modal-pw" hidden>
+  <div class="modal">
+    <h3>🔒 잠금 해제</h3>
+    <p>버튼을 사용하려면 비밀번호를 입력하세요</p>
+    <input type="password" id="pw-inp" placeholder="비밀번호" onkeydown="if(event.key==='Enter')confirmPw()">
+    <div id="pw-err" style="color:#f87171;font-size:.75rem;margin-top:6px;min-height:18px"></div>
+    <div class="brow" style="margin-top:10px">
+      <button onclick="cancelPw()" style="background:rgba(255,255,255,.08);color:var(--text)">취소</button>
+      <button onclick="confirmPw()" style="background:var(--accent);color:#fff">확인</button>
+    </div>
   </div>
 </div>
 
@@ -924,6 +943,8 @@ const COORDS=GJ.map(pts=>pts.map(c=>[c[1],c[0]]));
 ═══════════════════════════════════════════ */
 let db=null,userId=null,userName=null;
 let gpsActive=false,gpsWatchId=null;
+let unlocked=false;
+const PW='tpwhd3866!';
 const statuses={1:'대기',2:'대기',3:'대기',4:'대기',5:'대기',6:'대기',7:'대기'};
 const polylines={};
 const workerMarkers={};
@@ -1027,6 +1048,7 @@ function focusRoute(id){
    STATUS CHANGE
 ═══════════════════════════════════════════ */
 function setStatus(id,status){
+  if(!unlocked){ showToast('🔒 버튼을 잠금 해제하세요'); return; }
   if(!db){ showToast('⚡ 실시간 연결 중...'); return; }
   const prev=statuses[id];
   statuses[id]=status;
@@ -1062,6 +1084,38 @@ function toggleGps(){
     startGps();
   }
 }
+/* ── Lock / Unlock ── */
+function toggleLock(){
+  if(unlocked){
+    unlocked=false;
+    document.getElementById('lock-btn').textContent='🔒 잠금';
+    document.getElementById('lock-btn').classList.remove('unlocked');
+    showToast('🔒 잠금됨');
+  } else {
+    document.getElementById('pw-inp').value='';
+    document.getElementById('pw-err').textContent='';
+    document.getElementById('modal-pw').hidden=false;
+    setTimeout(()=>document.getElementById('pw-inp').focus(),120);
+  }
+}
+function cancelPw(){
+  document.getElementById('modal-pw').hidden=true;
+}
+function confirmPw(){
+  const v=document.getElementById('pw-inp').value;
+  if(v===PW){
+    unlocked=true;
+    document.getElementById('modal-pw').hidden=true;
+    document.getElementById('lock-btn').textContent='🔓 해제됨';
+    document.getElementById('lock-btn').classList.add('unlocked');
+    showToast('✅ 잠금 해제됨');
+  } else {
+    document.getElementById('pw-err').textContent='❌ 비밀번호가 틀렸습니다';
+    document.getElementById('pw-inp').value='';
+    document.getElementById('pw-inp').focus();
+  }
+}
+
 function cancelName(){
   document.getElementById('modal-name').hidden=true;
 }
