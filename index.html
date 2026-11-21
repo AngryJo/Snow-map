@@ -423,8 +423,8 @@ function attachAllFirebase(){
           const inDet = curEmd===emd.name;
           md.layers[i].setStyle({
             color:col,
-            weight: st==='working'?(inDet?6:5): inDet?5:4,
-            opacity: st==='done'?(inDet?.4:.35): inDet?.9:.7,
+            weight: st==='working'?(inDet?6:5): st==='done'?(inDet?6:5): inDet?5:4,
+            opacity: st==='done'?(inDet?.6:.5): inDet?.9:.7,
           });
           applyWorkingAnim(md.layers[i], st==='working');
         });
@@ -527,11 +527,11 @@ function refreshMapOpacity(){
       const col = r.status==='done'?'#10b981':r.status==='working'?'#f59e0b':r.color;
       md.layers[i].setStyle({
         color:col,
-        weight: r.status==='working'?(isSelected?6:5): isSelected?5:4,
+        weight: r.status==='working'?(isSelected?6:5): r.status==='done'?(isSelected?6:5): isSelected?5:4,
         opacity: isHub
-          ? (r.status==='done'?.35:.7)
+          ? (r.status==='done'?.5:.7)
           : isSelected
-            ? (r.status==='done'?.4:.9)
+            ? (r.status==='done'?.6:.9)
             : .12,
       });
       applyWorkingAnim(md.layers[i], r.status==='working');
