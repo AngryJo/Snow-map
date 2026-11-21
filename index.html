@@ -96,11 +96,14 @@ input{font-family:inherit}
   padding:5px 8px;border-radius:8px;font-size:.68rem;font-weight:700;flex-shrink:0;
   background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.5);color:var(--red);}
 #reset-all-topbar:hover{background:rgba(239,68,68,.22)}
-/* 모바일: 공간 확보 — 서브타이틀·실시간 뱃지 숨김, 타이틀 작게 */
+/* 모바일: 공간 확보 */
+.title-short{display:none}
 @media(max-width:599px){
   #top-sub{display:none}
   #top-title{font-size:.8rem}
   #conn-badge{display:none}
+  .title-full{display:none}
+  .title-short{display:inline}
 }
 .reset-btn{
   display:flex;align-items:center;gap:5px;
@@ -257,7 +260,7 @@ input{font-family:inherit}
 <div id="top-bar">
   <button id="back-btn" hidden>‹</button>
   <div id="top-info">
-    <div id="top-title">🌨 여주시 제설 관리</div>
+    <div id="top-title">🌨 <span class="title-full">여주시 제설 관리</span><span class="title-short">제설관리</span></div>
     <div id="top-sub">전체 노선 현황</div>
   </div>
   <button id="reset-all-topbar">🔄 초기화</button>
