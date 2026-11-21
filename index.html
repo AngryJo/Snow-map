@@ -114,25 +114,22 @@ input{font-family:inherit}
 .status-badge.working{color:var(--orange);border-color:var(--orange);background:rgba(245,158,11,.12)}
 .status-badge.done{color:var(--green);border-color:var(--green);background:rgba(16,185,129,.12)}
 
-/* STATUS BOTTOM SHEET */
-#status-sheet{
-  position:fixed;bottom:0;left:0;right:0;z-index:45;
-  background:var(--surface);border-top:2px solid var(--border);
-  border-radius:18px 18px 0 0;padding:16px;
-  transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);
+/* ACCORDION EXPAND */
+.r-expand{
+  padding:10px 12px 12px;
+  background:rgba(0,0,0,.25);
+  border-bottom:1px solid rgba(26,46,74,.5);
 }
-#status-sheet.open{transform:translateY(0)}
-#sheet-nm{font-size:.82rem;font-weight:700;margin-bottom:12px;color:var(--sub)}
-.sheet-btns{display:flex;gap:8px;margin-bottom:10px}
-.sht-btn{flex:1;padding:11px 4px;border-radius:9px;border:2px solid;font-size:.78rem;font-weight:700;background:transparent;color:inherit;cursor:pointer}
+.ex-btns{display:flex;gap:8px}
+.sht-btn{flex:1;padding:10px 4px;border-radius:9px;border:2px solid;font-size:.78rem;font-weight:700;background:transparent;color:inherit;cursor:pointer;transition:.15s}
 .sht-btn.waiting{color:var(--sub);border-color:var(--border)}
 .sht-btn.working{color:var(--orange);border-color:var(--orange)}
 .sht-btn.done{color:var(--green);border-color:var(--green)}
-.sht-btn.active.waiting{background:var(--sub);color:#fff}
-.sht-btn.active.working{background:var(--orange);color:#fff}
-.sht-btn.active.done{background:var(--green);color:#fff}
-#sheet-cancel{width:100%;padding:9px;border-radius:8px;background:rgba(255,255,255,.07);color:var(--sub);font-size:.8rem;cursor:pointer}
-#sheet-overlay{position:fixed;inset:0;z-index:44;background:rgba(0,0,0,.35)}
+.sht-btn.active.waiting{background:rgba(90,126,160,.3);color:var(--text)}
+.sht-btn.active.working{background:rgba(245,158,11,.2);color:var(--orange)}
+.sht-btn.active.done{background:rgba(16,185,129,.2);color:var(--green)}
+.r-chevron{font-size:1rem;color:var(--sub);flex-shrink:0;transition:transform .2s;line-height:1}
+.r-item.open .r-chevron{transform:rotate(90deg)}
 
 /* MODALS */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
@@ -191,18 +188,6 @@ input{font-family:inherit}
   </div>
 </div>
 
-<!-- Status bottom sheet -->
-<div id="sheet-overlay" hidden></div>
-<div id="status-sheet">
-  <div id="sheet-nm"></div>
-  <div class="sheet-btns">
-    <button class="sht-btn waiting" data-s="waiting">대기</button>
-    <button class="sht-btn working" data-s="working">작업중</button>
-    <button class="sht-btn done" data-s="done">완료</button>
-  </div>
-  <button id="sheet-cancel">닫기</button>
-</div>
-
 <!-- PW modal -->
 <div class="modal-bg" id="modal-pw" hidden>
   <div class="modal-box">
@@ -256,6 +241,18 @@ const COLORS = [
   '#FF4081','#FF6D00','#AEEA00','#00B0FF','#E040FB','#00BFA5',
 ];
 const ICONS = ['🏠','❄','👑','❄','❄','❄','❄','❄','❄','🏙','🏙','🏙'];
+/* 세종대왕면 노선명 오버라이드 (id 순서) */
+const ROUTE_NAMES = {
+  '세종대왕면': {
+    1:'면도106호선(번도5리~신지1리)',
+    2:'도시계획도로(면소재지)',
+    3:'도시계획도로(능서역세권)',
+    4:'리도202호선(매류2리~광대사거리)',
+    5:'면도107호선(매류2리~죽당리 경계)',
+    6:'면도101호선(용은2리~양거리)',
+    7:'리도211호선(양거리~수정리 경계)',
+  },
+};
 /* GeoJSON 파일명 후보: 단순명 먼저, 원본명 fallback */
 const GEO_CANDIDATES = {
   '세종대왕면': ['세종대왕면.geojson','03.세종대왕면 제설 노선도.geojson'],
@@ -277,8 +274,8 @@ let curEmd = null;          // null = hub mode
 let isLocked = true;
 let workerName = localStorage.getItem('wname') || '';
 let gpsOn = false, gpsWatch = null, gpsMarker = null;
-let pwCallback = null, pwEmd = null; // pwEmd = which area's pw to check
-let sheetRouteId = null, sheetEmd = null;
+let pwCallback = null, pwEmd = null;
+let expandedId = null;      // currently expanded route id in accordion
 const mapData = {};         // {emdName: {routes[], layers[], color}}
 
 /* ═══ FIREBASE ═══ */
@@ -305,17 +302,21 @@ async function fetchGeo(name){
   return null;
 }
 
-function parseGeo(geo, emdIdx){
-  return geo.features.map((f,i)=>({
-    id: f.properties.id ?? i+1,
-    name: f.properties.name||f.properties.nm||`노선 ${i+1}`,
-    road: f.properties.road||f.properties.도로명||'',
-    km: f.properties.km||f.properties.distance||0,
-    latlngs: f.geometry.coordinates.map(c=>[c[1],c[0]]),
-    color: COLORS[emdIdx%COLORS.length],
-    status: 'waiting',
-    worker: '',
-  }));
+function parseGeo(geo, emdIdx, emdName){
+  const nameOvr = ROUTE_NAMES[emdName]||{};
+  return geo.features.map((f,i)=>{
+    const id = f.properties.id ?? i+1;
+    return {
+      id,
+      name: nameOvr[id]||f.properties.name||f.properties.nm||`노선 ${id}`,
+      road: f.properties.road||f.properties.도로명||'',
+      km: parseFloat(f.properties.km||f.properties.distance||0),
+      latlngs: f.geometry.coordinates.map(c=>[c[1],c[0]]),
+      color: COLORS[emdIdx%COLORS.length],
+      status: 'waiting',
+      worker: '',
+    };
+  });
 }
 
 /* ═══ LOAD ALL GEOJSON ═══ */
@@ -325,12 +326,12 @@ async function loadAllGeo(){
     const emdIdx = EMD_LIST.indexOf(emd);
     const geo = await fetchGeo(emd.name);
     if(!geo){continue;}
-    const routes = parseGeo(geo, emdIdx);
+    const routes = parseGeo(geo, emdIdx, emd.name);
     const layers = routes.map(r=>{
       const poly = L.polyline(r.latlngs,{color:r.color,weight:4,opacity:.7});
       poly.bindTooltip(emd.name+' · '+r.name,{sticky:true});
       poly.on('click',()=>{
-        if(curEmd===emd.name) openSheet(r.id, emd.name);
+        if(curEmd===emd.name) toggleRoute(r.id);
         else openEmd(emd.name);
       });
       return poly.addTo(map);
@@ -370,7 +371,10 @@ function attachAllFirebase(){
       if(pt) pt.textContent=pct+'% ('+done+'/'+all.length+')';
       if(pt) pt.style.color = pct===100?'var(--green)':pct>0?'var(--orange)':'var(--sub)';
       /* update det panel if open */
-      if(curEmd===emd.name) updateDetProgress();
+      if(curEmd===emd.name){
+        updateDetProgress();
+        if(md) md.routes.forEach(r=>updateRouteItemDOM(r));
+      }
     });
   });
 }
@@ -459,20 +463,87 @@ function refreshMapOpacity(){
 }
 
 /* ═══ ROUTE LIST ═══ */
+function rColor(r){return r.status==='done'?'#10b981':r.status==='working'?'#f59e0b':r.color;}
+
 function renderRouteList(name){
   const md = mapData[name];
   if(!md) return;
+  expandedId=null;
   document.getElementById('route-list').innerHTML=md.routes.map(r=>`
-    <div class="r-item" onclick="openSheet(${r.id},'${name}')">
-      <div class="r-dot" style="color:${r.status==='done'?'#10b981':r.status==='working'?'#f59e0b':r.color}"></div>
-      <div class="r-info">
-        <div class="r-nm">${r.name}</div>
-        <div class="r-road">${r.road}</div>
+    <div class="r-wrap" id="rw-${r.id}">
+      <div class="r-item" data-id="${r.id}">
+        <div class="r-dot" id="rdot-${r.id}" style="color:${rColor(r)}"></div>
+        <div class="r-info">
+          <div class="r-nm">${r.name}</div>
+          ${r.road?`<div class="r-road">${r.road}</div>`:''}
+        </div>
+        ${r.km?`<div class="r-km">${r.km.toFixed(1)}km</div>`:''}
+        <div class="status-badge ${r.status}" id="rbadge-${r.id}">${sLabel(r.status)}</div>
+        <div class="r-chevron">›</div>
       </div>
-      ${r.km?`<div class="r-km">${r.km.toFixed(1)}km</div>`:''}
-      ${r.worker&&r.status==='working'?`<div class="r-wk">${r.worker}</div>`:''}
-      <div class="status-badge ${r.status}" id="badge-${name}-${r.id}">${sLabel(r.status)}</div>
+      <div class="r-expand" id="re-${r.id}" hidden>
+        <div class="ex-btns">
+          <button class="sht-btn waiting ${r.status==='waiting'?'active':''}" data-s="waiting" data-id="${r.id}">대기</button>
+          <button class="sht-btn working ${r.status==='working'?'active':''}" data-s="working" data-id="${r.id}">작업중</button>
+          <button class="sht-btn done ${r.status==='done'?'active':''}" data-s="done" data-id="${r.id}">완료</button>
+        </div>
+      </div>
     </div>`).join('');
+
+  /* 이벤트 위임 */
+  document.getElementById('route-list').addEventListener('click', e=>{
+    const btn = e.target.closest('.sht-btn');
+    const item = e.target.closest('.r-item');
+    if(btn){
+      e.stopPropagation();
+      setRouteStatus(parseInt(btn.dataset.id), btn.dataset.s);
+    } else if(item){
+      toggleRoute(parseInt(item.dataset.id));
+    }
+  });
+}
+
+function toggleRoute(id){
+  if(isLocked){ openPw(()=>toggleRoute(id), curEmd); return; }
+  const prev = expandedId;
+  /* 이전 항목 닫기 */
+  if(prev!==null){
+    const prevEx = document.getElementById('re-'+prev);
+    const prevItem = document.querySelector(`.r-item[data-id="${prev}"]`);
+    if(prevEx) prevEx.hidden=true;
+    if(prevItem) prevItem.classList.remove('open');
+  }
+  if(prev===id){ expandedId=null; return; }
+  /* 새 항목 열기 */
+  expandedId=id;
+  const ex = document.getElementById('re-'+id);
+  const item = document.querySelector(`.r-item[data-id="${id}"]`);
+  if(ex){ ex.hidden=false; }
+  if(item){ item.classList.add('open'); }
+  /* 현재 상태 하이라이트 */
+  const r = mapData[curEmd]?.routes.find(r=>r.id==id);
+  if(r && ex) ex.querySelectorAll('.sht-btn').forEach(b=>b.classList.toggle('active',b.dataset.s===r.status));
+}
+
+function setRouteStatus(id, status){
+  if(!curEmd) return;
+  rtdb.ref('routes/'+curEmd+'/'+id).update({status, worker:workerName, updatedAt:Date.now()});
+  /* 아코디언 닫기 */
+  const ex = document.getElementById('re-'+id);
+  const item = document.querySelector(`.r-item[data-id="${id}"]`);
+  if(ex) ex.hidden=true;
+  if(item) item.classList.remove('open');
+  expandedId=null;
+}
+
+function updateRouteItemDOM(r){
+  const badge = document.getElementById('rbadge-'+r.id);
+  const dot   = document.getElementById('rdot-'+r.id);
+  if(badge){ badge.textContent=sLabel(r.status); badge.className='status-badge '+r.status; }
+  if(dot)  { dot.style.color=rColor(r); }
+  /* 열려있는 패널의 active 상태 갱신 */
+  const ex = document.getElementById('re-'+r.id);
+  if(ex && !ex.hidden) ex.querySelectorAll('.sht-btn').forEach(b=>b.classList.toggle('active',b.dataset.s===r.status));
 }
 
 function updateDetProgress(){
@@ -485,36 +556,6 @@ function updateDetProgress(){
 }
 
 function sLabel(s){return s==='waiting'?'대기':s==='working'?'작업중':'완료';}
-
-/* ═══ STATUS SHEET ═══ */
-function openSheet(id, emdName){
-  const name = emdName||curEmd;
-  if(!name) return;
-  if(isLocked){ openPw(()=>openSheet(id,name), name); return; }
-  const md = mapData[name];
-  if(!md) return;
-  const r = md.routes.find(r=>r.id==id);
-  if(!r) return;
-  sheetRouteId=id; sheetEmd=name;
-  document.getElementById('sheet-nm').textContent=r.name;
-  document.querySelectorAll('.sht-btn').forEach(b=>b.classList.toggle('active',b.dataset.s===r.status));
-  document.getElementById('status-sheet').classList.add('open');
-  document.getElementById('sheet-overlay').hidden=false;
-}
-function closeSheet(){
-  document.getElementById('status-sheet').classList.remove('open');
-  document.getElementById('sheet-overlay').hidden=true;
-  sheetRouteId=null; sheetEmd=null;
-}
-document.querySelectorAll('.sht-btn').forEach(b=>b.addEventListener('click',()=>{
-  if(sheetRouteId==null||!sheetEmd) return;
-  rtdb.ref('routes/'+sheetEmd+'/'+sheetRouteId).update({
-    status:b.dataset.s, worker:workerName, updatedAt:Date.now()
-  });
-  closeSheet();
-}));
-document.getElementById('sheet-cancel').addEventListener('click',closeSheet);
-document.getElementById('sheet-overlay').addEventListener('click',closeSheet);
 
 /* ═══ GPS ═══ */
 document.getElementById('gps-btn').addEventListener('click',()=>{
