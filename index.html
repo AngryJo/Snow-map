@@ -274,7 +274,7 @@ let curEmd = null;          // null = hub mode
 let isLocked = true;
 let workerName = localStorage.getItem('wname') || '';
 let gpsOn = false, gpsWatch = null, gpsMarker = null;
-let pwCallback = null, pwEmd = null;
+let pwCallback = null, expectedPw = null;
 let expandedId = null;      // currently expanded route id in accordion
 const mapData = {};         // {emdName: {routes[], layers[], color}}
 
@@ -490,18 +490,19 @@ function renderRouteList(name){
       </div>
     </div>`).join('');
 
-  /* 이벤트 위임 */
-  document.getElementById('route-list').addEventListener('click', e=>{
-    const btn = e.target.closest('.sht-btn');
-    const item = e.target.closest('.r-item');
-    if(btn){
-      e.stopPropagation();
-      setRouteStatus(parseInt(btn.dataset.id), btn.dataset.s);
-    } else if(item){
-      toggleRoute(parseInt(item.dataset.id));
-    }
-  });
 }
+
+/* 이벤트 위임 - 한 번만 등록 */
+document.getElementById('route-list').addEventListener('click', e=>{
+  const btn = e.target.closest('.sht-btn');
+  const item = e.target.closest('.r-item');
+  if(btn){
+    e.stopPropagation();
+    setRouteStatus(parseInt(btn.dataset.id), btn.dataset.s);
+  } else if(item){
+    toggleRoute(parseInt(item.dataset.id));
+  }
+});
 
 function toggleRoute(id){
   if(isLocked){ openPw(()=>toggleRoute(id), curEmd); return; }
@@ -583,11 +584,12 @@ document.getElementById('gps-btn').addEventListener('click',()=>{
 document.getElementById('lock-btn').addEventListener('click',()=>{
   if(isLocked){
     if(!curEmd){showErr('먼저 담당 읍면동을 선택하세요');return;}
+    const emdForLock = curEmd;
     openPw(()=>{
       isLocked=false;
       document.getElementById('lock-btn').textContent='🔓 해제됨';
       document.getElementById('lock-btn').classList.add('active');
-    }, curEmd);
+    }, emdForLock);
   }else{
     isLocked=true;
     document.getElementById('lock-btn').textContent='🔒 잠김';
@@ -597,19 +599,20 @@ document.getElementById('lock-btn').addEventListener('click',()=>{
 
 /* ═══ PW MODAL ═══ */
 function openPw(cb, forEmd){
-  pwCallback=cb;
-  pwEmd=forEmd||curEmd;
+  const emd = forEmd || curEmd;
+  pwCallback = cb;
+  expectedPw = PW[emd] || null;   // 열릴 때 비밀번호를 직접 저장
+  document.querySelector('#modal-pw h3').textContent = '🔐 ' + (emd||'담당자') + ' 비밀번호';
   document.getElementById('pw-input').value='';
   document.getElementById('pw-input').placeholder='비밀번호 입력';
   document.getElementById('modal-pw').hidden=false;
   setTimeout(()=>document.getElementById('pw-input').focus(),60);
 }
 function confirmPw(){
-  const val=document.getElementById('pw-input').value;
-  const emd=pwEmd||curEmd;
-  if(emd && PW[emd] && val===PW[emd]){
+  const val = document.getElementById('pw-input').value;
+  if(expectedPw && val === expectedPw){
     document.getElementById('modal-pw').hidden=true;
-    const cb=pwCallback; pwCallback=null; pwEmd=null;
+    const cb=pwCallback; pwCallback=null; expectedPw=null;
     if(cb) cb();
   }else{
     document.getElementById('pw-input').value='';
@@ -621,7 +624,7 @@ document.getElementById('pw-ok').addEventListener('click',confirmPw);
 document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPw();});
 document.getElementById('pw-cancel').addEventListener('click',()=>{
   document.getElementById('modal-pw').hidden=true;
-  pwCallback=null; pwEmd=null;
+  pwCallback=null; expectedPw=null;
 });
 
 /* ═══ NAME MODAL ═══ */
