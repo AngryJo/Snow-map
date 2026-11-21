@@ -240,6 +240,12 @@ const COLORS = [
   '#FF3D00','#FF9100','#FFD600','#76FF03','#00E5FF','#D500F9',
   '#FF4081','#FF6D00','#AEEA00','#00B0FF','#E040FB','#00BFA5',
 ];
+/* 읍면동별 노선 색상 고정 (지도에서 잘 보이는 색으로 직접 지정) */
+const EMD_COLORS = {
+  '세종대왕면': '#FF1744',  // 선명한 빨강
+  '강천면':     '#AA00FF',  // 선명한 보라
+  '여흥동':     '#00B0FF',  // 하늘색 (기존 유지)
+};
 const ICONS = ['🏠','❄','👑','❄','❄','❄','❄','❄','❄','🏙','🏙','🏙'];
 /* 세종대왕면 노선명 오버라이드 (id 순서) */
 const ROUTE_NAMES = {
@@ -319,7 +325,7 @@ function parseGeo(geo, emdIdx, emdName){
       road: f.properties.road||f.properties.도로명||'',
       km: parseFloat(f.properties.km||f.properties.distance||0),
       latlngs: f.geometry.coordinates.map(c=>[c[1],c[0]]),
-      color: COLORS[emdIdx%COLORS.length],
+      color: EMD_COLORS[emdName] || COLORS[emdIdx%COLORS.length],
       status: 'waiting',
       worker: '',
     };
@@ -343,7 +349,7 @@ async function loadAllGeo(){
       });
       return poly.addTo(map);
     });
-    mapData[emd.name]={routes, layers, color:COLORS[emdIdx%COLORS.length]};
+    mapData[emd.name]={routes, layers, color:EMD_COLORS[emd.name]||COLORS[emdIdx%COLORS.length]};
   }
 }
 
@@ -620,6 +626,8 @@ document.getElementById('gps-btn').addEventListener('click',()=>{
     rtdb.ref('workers/'+deviceId).remove();
     return;
   }
+  // 잠금 해제한 작업자만 위치 공유 가능
+  if(isLocked){showErr('🔒 담당 읍면동 잠금을 먼저 해제하세요');return;}
   if(!navigator.geolocation){showErr('위치 서비스 미지원');return;}
   gpsOn=true;
   document.getElementById('gps-btn').textContent='📍 ON';
