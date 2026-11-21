@@ -141,6 +141,35 @@ input{font-family:inherit}
 .modal-btn.primary{background:var(--accent);color:#fff}
 .modal-btn.secondary{background:rgba(255,255,255,.07);color:var(--sub);margin-top:7px}
 
+/* LEGEND PANEL */
+#legend-panel{
+  position:fixed;top:56px;right:8px;z-index:15;
+  background:rgba(10,22,40,0.75);
+  border:1px solid rgba(26,46,74,.8);
+  border-radius:12px;min-width:200px;max-width:260px;
+  backdrop-filter:blur(4px);overflow:hidden;
+}
+#legend-header{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 12px;cursor:pointer;user-select:none;
+}
+#legend-header:hover{background:rgba(255,255,255,.04)}
+#legend-total-pct{
+  font-size:.82rem;font-weight:800;
+  background:linear-gradient(135deg,#60a5fa,#a78bfa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+#legend-total-count{flex:1;font-size:.62rem;color:var(--sub)}
+#legend-toggle-ico{font-size:.75rem;color:var(--sub);transition:transform .2s;line-height:1}
+#legend-panel.expanded #legend-toggle-ico{transform:rotate(90deg)}
+#legend-body{border-top:1px solid rgba(26,46,74,.6);padding:5px 0}
+.legend-row{display:flex;align-items:center;gap:7px;padding:4px 12px}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.legend-nm{font-size:.68rem;font-weight:700;flex-shrink:0;min-width:62px}
+.legend-bar-wrap{flex:1;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+.legend-bar{height:100%;background:var(--green);border-radius:2px;transition:width .5s}
+.legend-row-pct{font-size:.58rem;color:var(--sub);flex-shrink:0;min-width:44px;text-align:right}
+
 /* ERR BAR */
 #err-bar{
   position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:60;
@@ -154,6 +183,16 @@ input{font-family:inherit}
 
 <!-- MAP -->
 <div id="map"></div>
+
+<!-- LEGEND PANEL (지도 위 범례 / 전체 진행률) -->
+<div id="legend-panel">
+  <div id="legend-header" onclick="toggleLegend()">
+    <span id="legend-total-pct">0%</span>
+    <span id="legend-total-count">(집계 중...)</span>
+    <span id="legend-toggle-ico">›</span>
+  </div>
+  <div id="legend-body" hidden></div>
+</div>
 
 <!-- TOP BAR -->
 <div id="top-bar">
@@ -394,6 +433,8 @@ function attachAllFirebase(){
         updateDetProgress();
         if(md) md.routes.forEach(r=>updateRouteItemDOM(r));
       }
+      /* 범례 패널 전체 진행률 갱신 */
+      updateLegend();
     });
   });
 }
@@ -595,6 +636,49 @@ function updateDetProgress(){
 }
 
 function sLabel(s){return s==='waiting'?'대기':s==='working'?'작업중':'완료';}
+
+/* ═══ LEGEND PANEL ═══ */
+function toggleLegend(){
+  const panel = document.getElementById('legend-panel');
+  const body  = document.getElementById('legend-body');
+  const isOpen = panel.classList.contains('expanded');
+  panel.classList.toggle('expanded', !isOpen);
+  body.hidden = isOpen;
+}
+
+function updateLegend(){
+  const readyEmds = EMD_LIST.filter(e=>e.ready);
+  let totalAll=0, doneAll=0;
+  const rows = readyEmds.map(emd=>{
+    const md = mapData[emd.name];
+    if(!md) return null;
+    const total = md.routes.length;
+    const done  = md.routes.filter(r=>r.status==='done').length;
+    totalAll += total;
+    doneAll  += done;
+    const pct = total ? Math.round(done/total*100) : 0;
+    const color = md.color || '#60a5fa';
+    return {name:emd.name, total, done, pct, color};
+  }).filter(Boolean);
+
+  const totalPct = totalAll ? Math.round(doneAll/totalAll*100) : 0;
+  document.getElementById('legend-total-pct').textContent = totalPct+'%';
+  document.getElementById('legend-total-count').textContent =
+    `(완료 ${doneAll} / ${totalAll})`;
+
+  const body = document.getElementById('legend-body');
+  body.innerHTML = rows.map(r=>{
+    const barColor = r.pct===100 ? 'var(--green)' : r.pct>0 ? 'var(--orange)' : 'rgba(255,255,255,.15)';
+    return `<div class="legend-row">
+      <div class="legend-dot" style="background:${r.color}"></div>
+      <div class="legend-nm">${r.name}</div>
+      <div class="legend-bar-wrap">
+        <div class="legend-bar" style="width:${r.pct}%;background:${barColor}"></div>
+      </div>
+      <div class="legend-row-pct">${r.done}/${r.total}</div>
+    </div>`;
+  }).join('');
+}
 
 /* ═══ GPS (Firebase 실시간 공유) ═══ */
 const STALE_MS = 15 * 60 * 1000; // 15분 이상 업데이트 없으면 오프라인 처리
