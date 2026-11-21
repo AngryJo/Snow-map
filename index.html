@@ -669,6 +669,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <style>
 :root{
   --bg:#070f1d;--panel:#0d1a2e;--card:#091525;--border:#1a2e4a;
@@ -1033,7 +1035,7 @@ function setStatus(id,status){
   updateProgress();
   if(status==='완료'&&prev!=='완료') fireBurst();
   showSync();
-  db.collection('routes').doc(String(id)).set({
+  db.ref('routes/'+id).set({
     status,
     worker:userName||'익명',
     updatedAt:Date.now(),
@@ -1053,7 +1055,6 @@ function setStatus(id,status){
 ═══════════════════════════════════════════ */
 function toggleGps(){
   if(gpsActive){ stopGps(); return; }
-  if(!userId){ showToast('GPS는 claude.ai 로그인 필요'); return; }
   if(!userName){
     document.getElementById('modal-name').hidden=false;
     setTimeout(()=>document.getElementById('name-inp').focus(),120);
@@ -1080,7 +1081,7 @@ function startGps(){
   gpsWatchId=navigator.geolocation.watchPosition(
     pos=>{
       if(!db||!userId) return;
-      db.collection('workers').doc(userId).set({
+      db.ref('workers/'+userId).set({
         name:userName,
         lat:pos.coords.latitude,
         lng:pos.coords.longitude,
@@ -1101,7 +1102,7 @@ function stopGps(){
   document.getElementById('gps-btn').textContent='📍 위치 공유';
   document.getElementById('gps-btn').classList.remove('gps-on');
   if(db&&userId){
-    db.collection('workers').doc(userId).set({active:false,updatedAt:Date.now(),name:userName||''});
+    db.ref('workers/'+userId).update({active:false,updatedAt:Date.now(),name:userName||''});
   }
 }
 
@@ -1117,20 +1118,20 @@ function mkWorkerIcon(name,isMe){
 function handleWorkers(snap){
   const now=Date.now();
   const active=new Set();
-  snap.docs.forEach(doc=>{
-    const d=doc.data();
-    if(!d.active||!d.lat||!d.lng) return;
+  const data=snap.val()||{};
+  Object.entries(data).forEach(([wid,d])=>{
+    if(!d||!d.active||!d.lat||!d.lng) return;
     if(now-(d.updatedAt||0)>5*60*1000) return;
-    active.add(doc.id);
-    const isMe=doc.id===userId;
-    if(workerMarkers[doc.id]){
-      workerMarkers[doc.id].setLatLng([d.lat,d.lng]);
-      workerMarkers[doc.id].setIcon(mkWorkerIcon(d.name,isMe));
+    active.add(wid);
+    const isMe=wid===userId;
+    if(workerMarkers[wid]){
+      workerMarkers[wid].setLatLng([d.lat,d.lng]);
+      workerMarkers[wid].setIcon(mkWorkerIcon(d.name,isMe));
     } else {
       const m=L.marker([d.lat,d.lng],{icon:mkWorkerIcon(d.name,isMe),zIndexOffset:isMe?1000:500});
       m.bindPopup(`<b>${d.name}</b>${isMe?'<br>(나)':''}`);
       m.addTo(map);
-      workerMarkers[doc.id]=m;
+      workerMarkers[wid]=m;
     }
   });
   Object.keys(workerMarkers).forEach(wid=>{
@@ -1142,43 +1143,58 @@ function handleWorkers(snap){
    DB INIT
 ═══════════════════════════════════════════ */
 async function initDb(){
-  // Get user ID (for GPS)
+  // userId: localStorage에서 불러오거나 새로 생성
   try{
-    const uApi=await claude.use('user');
-    if(uApi) userId=await uApi.id();
-  } catch(e){}
+    userId=localStorage.getItem('snow_uid');
+    if(!userId){
+      userId='u_'+Math.random().toString(36).substr(2,9);
+      localStorage.setItem('snow_uid',userId);
+    }
+  } catch(e){ userId='u_'+Math.random().toString(36).substr(2,9); }
 
-  // Load saved name
+  // 작업자 이름 불러오기
   try{ userName=localStorage.getItem('snow_wname'); } catch(e){}
 
-  // Connect db
+  // Firebase 초기화
   try{
-    db=await claude.use('db');
-  } catch(e){ db=null; }
-
-  if(!db){
+    const firebaseConfig={
+      apiKey:'AIzaSyBrc1ROtWM7LG_QyIEc2HfzczpH-kep9ZE',
+      authDomain:'sejong-yeoju-snow-map.firebaseapp.com',
+      databaseURL:'https://sejong-yeoju-snow-map-default-rtdb.asia-southeast1.firebasedatabase.app',
+      projectId:'sejong-yeoju-snow-map',
+      storageBucket:'sejong-yeoju-snow-map.firebasestorage.app',
+      messagingSenderId:'179788081279',
+      appId:'1:179788081279:web:1f613a22355680b2f9374a',
+    };
+    firebase.initializeApp(firebaseConfig);
+    db=firebase.database();
+  } catch(e){
+    console.error('Firebase init 실패',e);
+    db=null;
     setBadge('err','오프라인');
     return;
   }
+
   setBadge('ok','실시간 연결');
 
-  // Listen routes
-  db.collection('routes').onSnapshot(snap=>{
-    snap.docs.forEach(doc=>{
-      const id=parseInt(doc.id);
-      if(id>=1&&id<=7){
-        const s=doc.data().status||'대기';
+  // 노선 상태 실시간 수신
+  db.ref('routes').on('value', snap=>{
+    const data=snap.val()||{};
+    Object.entries(data).forEach(([key,val])=>{
+      const id=parseInt(key);
+      if(id>=1&&id<=7&&val){
+        const s=val.status||'대기';
         statuses[id]=s;
         updateCard(id,s);
         applyRouteStyle(id,s);
       }
     });
     updateProgress();
-  }, err=>{ console.error('routes snap',err); setBadge('err','오류'); });
+  }, err=>{ console.error('routes',err); setBadge('err','오류'); });
 
-  // Listen workers
-  db.collection('workers').onSnapshot(handleWorkers,
-    err=>console.error('workers snap',err));
+  // 작업자 위치 실시간 수신
+  db.ref('workers').on('value', snap=>handleWorkers(snap),
+    err=>console.error('workers',err));
 }
 
 /* ═══════════════════════════════════════════
