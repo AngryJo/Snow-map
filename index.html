@@ -933,9 +933,9 @@ const map=L.map('map',{
   center:[37.278,127.573],zoom:12,
   zoomControl:true,attributionControl:true,
 });
-L.tileLayer('https://api.vworld.kr/req/wmts/1.0.0/73D40734-7942-4E81-9C93-5F897F940DCB/Midnight/{z}/{y}/{x}.png',{
-  attribution:'© <a href="https://www.vworld.kr">국토지리정보원</a>',
-  maxZoom:18,
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  subdomains:'abc',maxZoom:19,
 }).addTo(map);
 
 function getStyle(routeIdx,status){
