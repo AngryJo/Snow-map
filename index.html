@@ -89,15 +89,18 @@ input{font-family:inherit}
 
 /* HUB PANEL */
 #hub-panel{padding:0;display:flex;flex-direction:column;flex:1;overflow:hidden}
-#hub-actions{display:flex;gap:8px;padding:10px 12px 8px;border-bottom:1px solid rgba(26,46,74,.4)}
-/* PC: show reset btn in topbar, hide hub-actions reset */
-#reset-all-topbar{display:none;align-items:center;gap:5px;
-  padding:5px 10px;border-radius:8px;font-size:.7rem;font-weight:700;
+/* hub-actions는 모든 화면에서 숨김 — 초기화 버튼은 탑바로 이동 */
+#hub-actions{display:none}
+/* 탑바 초기화 버튼 — 모바일/PC 모두 표시 */
+#reset-all-topbar{display:flex;align-items:center;gap:4px;
+  padding:5px 8px;border-radius:8px;font-size:.68rem;font-weight:700;flex-shrink:0;
   background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.5);color:var(--red);}
 #reset-all-topbar:hover{background:rgba(239,68,68,.22)}
-@media(min-width:600px){
-  #reset-all-topbar{display:flex}
-  #hub-actions{display:none}
+/* 모바일: 공간 확보 — 서브타이틀·실시간 뱃지 숨김, 타이틀 작게 */
+@media(max-width:599px){
+  #top-sub{display:none}
+  #top-title{font-size:.8rem}
+  #conn-badge{display:none}
 }
 .reset-btn{
   display:flex;align-items:center;gap:5px;
