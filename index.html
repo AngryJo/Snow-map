@@ -16,17 +16,17 @@
 [hidden]{display:none!important}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',system-ui,sans-serif}
-button{cursor:pointer;font-family:inherit}
+button{cursor:pointer;font-family:inherit;border:none}
 input{font-family:inherit}
 
-/* ── MAP (always full-screen) ── */
+/* MAP always full-screen */
 #map{position:fixed;inset:0;z-index:1}
 
-/* ── TOP BAR ── */
+/* TOP BAR */
 #top-bar{
   position:fixed;top:0;left:0;right:0;z-index:20;
-  height:52px;display:flex;align-items:center;gap:10px;padding:0 14px;
-  background:linear-gradient(180deg,rgba(7,15,29,.95) 60%,transparent);
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:linear-gradient(180deg,rgba(7,15,29,.96) 70%,transparent);
   pointer-events:none;
 }
 #top-bar>*{pointer-events:auto}
@@ -38,80 +38,83 @@ input{font-family:inherit}
 #back-btn:hover{background:rgba(255,255,255,.2)}
 #top-info{flex:1;min-width:0}
 #top-title{
-  font-size:1rem;font-weight:900;
+  font-size:.95rem;font-weight:900;
   background:linear-gradient(135deg,#60a5fa,#a78bfa);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  white-space:nowrap;
 }
-#top-sub{font-size:.68rem;color:var(--sub);margin-top:1px}
+#top-sub{font-size:.62rem;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Control buttons - always visible */
+.ctrl-btn{
+  background:rgba(13,26,46,.9);border:1px solid var(--border);
+  color:var(--text);font-size:.72rem;padding:5px 8px;border-radius:8px;
+  display:flex;align-items:center;gap:3px;white-space:nowrap;flex-shrink:0;
+}
+.ctrl-btn:hover{background:rgba(26,46,74,.9)}
+.ctrl-btn.active{border-color:var(--accent);color:var(--accent)}
 #conn-badge{
-  background:var(--green);color:#fff;border:none;
-  font-size:.65rem;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0;
+  background:var(--green);color:#fff;
+  font-size:.62rem;font-weight:700;padding:5px 9px;border-radius:8px;flex-shrink:0;
 }
 
-/* ── BOTTOM PANEL ── */
+/* BOTTOM PANEL */
 #bottom{
   position:fixed;bottom:0;left:0;right:0;z-index:20;
-  background:rgba(10,22,40,.97);
+  background:rgba(10,22,40,.96);
   border-top:1px solid var(--border);
   border-radius:16px 16px 0 0;
-  backdrop-filter:blur(10px);
+  backdrop-filter:blur(12px);
 }
-.panel-drag{
-  width:36px;height:4px;background:rgba(255,255,255,.15);
-  border-radius:2px;margin:8px auto 4px;
-}
+.drag-handle{width:32px;height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin:7px auto 3px}
 
-/* ── HUB PANEL ── */
-#hub-panel{padding:0 10px 12px}
+/* HUB PANEL */
+#hub-panel{padding:0 8px 10px}
 #emd-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:7px;
-  max-height:40vh;overflow-y:auto;padding:4px 0;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  max-height:38vh;overflow-y:auto;padding:2px 0;
 }
 @media(min-width:600px){#emd-grid{grid-template-columns:repeat(4,1fr)}}
 @media(min-width:900px){#emd-grid{grid-template-columns:repeat(6,1fr)}}
 .emd-card{
-  background:var(--card);border:1px solid var(--border);border-radius:10px;
-  padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  background:var(--card);border:1px solid var(--border);border-radius:9px;
+  padding:9px 5px;display:flex;flex-direction:column;align-items:center;gap:3px;
   transition:.2s;animation:fadeUp .3s both;
 }
 .emd-card.ready{cursor:pointer}
 .emd-card.ready:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 16px rgba(59,130,246,.2)}
-.emd-card.dim{opacity:.35;cursor:default}
+.emd-card.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,.3)}
+.emd-card.dim{opacity:.3;cursor:default}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.emd-ico{font-size:1.5rem}
-.emd-nm{font-size:.75rem;font-weight:800;text-align:center}
+.emd-ico{font-size:1.3rem}
+.emd-nm{font-size:.7rem;font-weight:800;text-align:center}
 .emd-pbar-wrap{width:100%;height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
 .emd-pbar{height:100%;background:var(--green);border-radius:2px;transition:width .6s}
-.emd-pct{font-size:.6rem;color:var(--sub);text-align:center}
-.emd-pct.dim-txt{color:rgba(90,126,160,.35)}
+.emd-pct{font-size:.58rem;text-align:center}
 
-/* ── DET PANEL ── */
-#det-panel{display:flex;flex-direction:column;max-height:52vh}
-.det-header{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
-#det-nm{flex:1;font-size:.9rem;font-weight:700}
-#prog-text{font-size:.68rem;color:var(--sub);flex-shrink:0}
+/* DET PANEL */
+#det-panel{display:flex;flex-direction:column;max-height:50vh}
+.det-header{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+#det-nm{flex:1;font-size:.85rem;font-weight:700}
+#prog-text{font-size:.65rem;color:var(--sub)}
 .prog-wrap{height:4px;background:rgba(255,255,255,.05);flex-shrink:0}
 #prog-bar{height:100%;background:linear-gradient(90deg,var(--green),#06d6a0);transition:width .5s}
-.user-row{display:flex;align-items:center;gap:5px;padding:7px 14px;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--sub);flex-shrink:0}
-#worker-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sm-btn{background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--sub);font-size:.62rem;padding:3px 7px;border-radius:5px}
-.sm-btn:hover{background:rgba(255,255,255,.12)}
 #route-list{overflow-y:auto;flex:1}
 
-/* Route items */
-.r-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(26,46,74,.4);cursor:pointer;transition:background .15s}
+.r-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid rgba(26,46,74,.4);cursor:pointer;transition:background .15s}
 .r-item:hover{background:rgba(255,255,255,.04)}
-.r-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:2px solid currentColor}
+.r-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid currentColor}
 .r-info{flex:1;min-width:0}
-.r-nm{font-size:.8rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.r-road{font-size:.64rem;color:var(--sub);margin-top:1px}
-.r-km{font-size:.64rem;color:var(--sub);flex-shrink:0}
-.status-badge{font-size:.6rem;padding:2px 7px;border-radius:10px;font-weight:600;border:1px solid;flex-shrink:0}
+.r-nm{font-size:.78rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-road{font-size:.62rem;color:var(--sub);margin-top:1px}
+.r-km{font-size:.62rem;color:var(--sub);flex-shrink:0}
+.r-wk{font-size:.6rem;color:var(--orange);flex-shrink:0;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status-badge{font-size:.58rem;padding:2px 6px;border-radius:9px;font-weight:600;border:1px solid;flex-shrink:0}
 .status-badge.waiting{color:var(--sub);border-color:var(--border);background:rgba(26,46,74,.4)}
 .status-badge.working{color:var(--orange);border-color:var(--orange);background:rgba(245,158,11,.12)}
 .status-badge.done{color:var(--green);border-color:var(--green);background:rgba(16,185,129,.12)}
 
-/* ── STATUS BOTTOM SHEET ── */
+/* STATUS BOTTOM SHEET */
 #status-sheet{
   position:fixed;bottom:0;left:0;right:0;z-index:45;
   background:var(--surface);border-top:2px solid var(--border);
@@ -119,35 +122,34 @@ input{font-family:inherit}
   transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);
 }
 #status-sheet.open{transform:translateY(0)}
-#sheet-nm{font-size:.85rem;font-weight:700;margin-bottom:14px;color:var(--sub)}
-.sheet-btns{display:flex;gap:8px;margin-bottom:12px}
-.sht-btn{flex:1;padding:12px 6px;border-radius:10px;border:2px solid;font-size:.8rem;font-weight:700;background:transparent;color:inherit;cursor:pointer}
+#sheet-nm{font-size:.82rem;font-weight:700;margin-bottom:12px;color:var(--sub)}
+.sheet-btns{display:flex;gap:8px;margin-bottom:10px}
+.sht-btn{flex:1;padding:11px 4px;border-radius:9px;border:2px solid;font-size:.78rem;font-weight:700;background:transparent;color:inherit;cursor:pointer}
 .sht-btn.waiting{color:var(--sub);border-color:var(--border)}
 .sht-btn.working{color:var(--orange);border-color:var(--orange)}
 .sht-btn.done{color:var(--green);border-color:var(--green)}
 .sht-btn.active.waiting{background:var(--sub);color:#fff}
 .sht-btn.active.working{background:var(--orange);color:#fff}
 .sht-btn.active.done{background:var(--green);color:#fff}
-#sheet-cancel{width:100%;padding:10px;border-radius:8px;border:none;background:rgba(255,255,255,.07);color:var(--sub);font-size:.82rem;cursor:pointer}
-#sheet-cancel:hover{background:rgba(255,255,255,.12)}
-#sheet-overlay{position:fixed;inset:0;z-index:44;background:rgba(0,0,0,.4)}
+#sheet-cancel{width:100%;padding:9px;border-radius:8px;background:rgba(255,255,255,.07);color:var(--sub);font-size:.8rem;cursor:pointer}
+#sheet-overlay{position:fixed;inset:0;z-index:44;background:rgba(0,0,0,.35)}
 
-/* ── MODALS ── */
+/* MODALS */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
-.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:300px}
-.modal-box h3{font-size:1rem;margin-bottom:16px}
-.modal-box input{width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:.9rem;margin-bottom:12px}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%;max-width:300px}
+.modal-box h3{font-size:.95rem;margin-bottom:14px}
+.modal-box input{width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:.88rem;margin-bottom:11px}
 .modal-box input:focus{outline:none;border-color:var(--accent)}
-.modal-btn{width:100%;padding:10px;border-radius:8px;border:none;font-size:.88rem;font-weight:700;cursor:pointer}
+.modal-btn{width:100%;padding:10px;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer}
 .modal-btn.primary{background:var(--accent);color:#fff}
-.modal-btn.secondary{background:rgba(255,255,255,.07);color:var(--sub);margin-top:8px}
+.modal-btn.secondary{background:rgba(255,255,255,.07);color:var(--sub);margin-top:7px}
 
-/* ── ERR BAR ── */
+/* ERR BAR */
 #err-bar{
-  position:fixed;bottom:0;left:0;right:0;z-index:60;
-  background:rgba(239,68,68,.2);border-top:1px solid var(--red);
-  color:var(--red);font-size:.75rem;padding:10px 16px;
-  text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;
+  position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:60;
+  background:rgba(239,68,68,.9);color:#fff;font-size:.75rem;
+  padding:7px 16px;border-radius:20px;white-space:nowrap;
+  animation:fadeUp .2s both;
 }
 </style>
 </head>
@@ -161,14 +163,17 @@ input{font-family:inherit}
   <button id="back-btn" hidden>‹</button>
   <div id="top-info">
     <div id="top-title">🌨 여주시 제설 관리</div>
-    <div id="top-sub">담당 읍면동을 선택하세요</div>
+    <div id="top-sub">전체 노선 현황</div>
   </div>
-  <button id="conn-badge">실시간 연결</button>
+  <button id="gps-btn" class="ctrl-btn">📍 위치</button>
+  <button id="lock-btn" class="ctrl-btn">🔒 잠김</button>
+  <button id="name-btn" class="ctrl-btn">✏️ <span id="name-label">이름</span></button>
+  <button id="conn-badge">실시간</button>
 </div>
 
 <!-- BOTTOM PANEL -->
 <div id="bottom">
-  <div class="panel-drag"></div>
+  <div class="drag-handle"></div>
 
   <!-- Hub: area grid -->
   <div id="hub-panel">
@@ -179,15 +184,9 @@ input{font-family:inherit}
   <div id="det-panel" hidden>
     <div class="det-header">
       <div id="det-nm"></div>
-      <div id="prog-text">-</div>
+      <div id="prog-text"></div>
     </div>
     <div class="prog-wrap"><div id="prog-bar" style="width:0%"></div></div>
-    <div class="user-row">
-      <span id="worker-label">이름: 없음</span>
-      <button class="sm-btn" id="gps-btn">📍 위치</button>
-      <button class="sm-btn" id="lock-btn">🔒 잠김</button>
-      <button class="sm-btn" id="name-btn">✏️ 이름</button>
-    </div>
     <div id="route-list"></div>
   </div>
 </div>
@@ -224,10 +223,9 @@ input{font-family:inherit}
   </div>
 </div>
 
-<!-- Error bar -->
-<div id="err-bar" hidden>⚠ <span id="err-msg"></span></div>
+<!-- Error msg -->
+<div id="err-bar" hidden></div>
 
-<!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -257,7 +255,13 @@ const COLORS = [
   '#FF3D00','#FF9100','#FFD600','#76FF03','#00E5FF','#D500F9',
   '#FF4081','#FF6D00','#AEEA00','#00B0FF','#E040FB','#00BFA5',
 ];
-const ICONS = ['🏠','❄️','👑','❄️','❄️','❄️','❄️','❄️','❄️','🏙️','🏙️','🏙️'];
+const ICONS = ['🏠','❄','👑','❄','❄','❄','❄','❄','❄','🏙','🏙','🏙'];
+/* GeoJSON 파일명 후보: 단순명 먼저, 원본명 fallback */
+const GEO_CANDIDATES = {
+  '세종대왕면': ['세종대왕면.geojson','03.세종대왕면 제설 노선도.geojson'],
+  '강천면':     ['강천면.geojson','09.강천면 제설 노선도.geojson'],
+  '여흥동':     ['여흥동.geojson','10.여흥동 제설 노선도.geojson'],
+};
 const FB_CFG = {
   apiKey:'AIzaSyBrc1ROtWM7LG_QyIEc2HfzczpH-kep9ZE',
   authDomain:'sejong-yeoju-snow-map.firebaseapp.com',
@@ -269,15 +273,13 @@ const FB_CFG = {
 };
 
 /* ═══ STATE ═══ */
-let curEmd = null;
+let curEmd = null;          // null = hub mode
 let isLocked = true;
 let workerName = localStorage.getItem('wname') || '';
-let geoLayers = [];
-let gpsMarker = null, gpsWatch = null, gpsOn = false;
-let curRoutes = [];
-let detListener = null;
-let sheetRouteId = null;
-let hubListeners = {};
+let gpsOn = false, gpsWatch = null, gpsMarker = null;
+let pwCallback = null, pwEmd = null; // pwEmd = which area's pw to check
+let sheetRouteId = null, sheetEmd = null;
+const mapData = {};         // {emdName: {routes[], layers[], color}}
 
 /* ═══ FIREBASE ═══ */
 firebase.initializeApp(FB_CFG);
@@ -290,298 +292,336 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 }).addTo(map);
 L.control.zoom({position:'topright'}).addTo(map);
 
-/* ═══ HUB ═══ */
+/* ═══ GEOJSON FETCH ═══ */
+async function fetchGeo(name){
+  const candidates = GEO_CANDIDATES[name] || [name+'.geojson'];
+  for(const fname of candidates){
+    try{
+      const r = await fetch(fname.split('').map(c=>
+        c===' '?'%20':(c.charCodeAt(0)>127?encodeURIComponent(c):c)).join(''));
+      if(r.ok) return await r.json();
+    }catch(e){}
+  }
+  return null;
+}
+
+function parseGeo(geo, emdIdx){
+  return geo.features.map((f,i)=>({
+    id: f.properties.id ?? i+1,
+    name: f.properties.name||f.properties.nm||`노선 ${i+1}`,
+    road: f.properties.road||f.properties.도로명||'',
+    km: f.properties.km||f.properties.distance||0,
+    latlngs: f.geometry.coordinates.map(c=>[c[1],c[0]]),
+    color: COLORS[emdIdx%COLORS.length],
+    status: 'waiting',
+    worker: '',
+  }));
+}
+
+/* ═══ LOAD ALL GEOJSON ═══ */
+async function loadAllGeo(){
+  const readyList = EMD_LIST.filter(e=>e.ready);
+  for(const emd of readyList){
+    const emdIdx = EMD_LIST.indexOf(emd);
+    const geo = await fetchGeo(emd.name);
+    if(!geo){continue;}
+    const routes = parseGeo(geo, emdIdx);
+    const layers = routes.map(r=>{
+      const poly = L.polyline(r.latlngs,{color:r.color,weight:4,opacity:.7});
+      poly.bindTooltip(emd.name+' · '+r.name,{sticky:true});
+      poly.on('click',()=>{
+        if(curEmd===emd.name) openSheet(r.id, emd.name);
+        else openEmd(emd.name);
+      });
+      return poly.addTo(map);
+    });
+    mapData[emd.name]={routes, layers, color:COLORS[emdIdx%COLORS.length]};
+  }
+}
+
+/* ═══ FIREBASE LISTENERS ═══ */
+function attachAllFirebase(){
+  EMD_LIST.filter(e=>e.ready).forEach(emd=>{
+    rtdb.ref('routes/'+emd.name).on('value', snap=>{
+      const data = snap.val()||{};
+      /* update map colors */
+      const md = mapData[emd.name];
+      if(md){
+        md.routes.forEach((r,i)=>{
+          const fb = data[r.id]||data[String(r.id)];
+          const st = fb?fb.status:'waiting';
+          r.status=st; r.worker=(fb&&fb.worker)||'';
+          const col = st==='done'?'#10b981':st==='working'?'#f59e0b':r.color;
+          const inDet = curEmd===emd.name;
+          md.layers[i].setStyle({
+            color:col,
+            weight: inDet?5:4,
+            opacity: st==='done'?(inDet?.4:.35): inDet?.9:.65,
+          });
+        });
+      }
+      /* update hub card */
+      const all = Object.values(data);
+      const done = all.filter(r=>r.status==='done').length;
+      const pct = all.length?Math.round(done/all.length*100):0;
+      const pb = document.getElementById('pb-'+emd.name);
+      const pt = document.getElementById('pct-'+emd.name);
+      if(pb) pb.style.width=pct+'%';
+      if(pt) pt.textContent=pct+'% ('+done+'/'+all.length+')';
+      if(pt) pt.style.color = pct===100?'var(--green)':pct>0?'var(--orange)':'var(--sub)';
+      /* update det panel if open */
+      if(curEmd===emd.name) updateDetProgress();
+    });
+  });
+}
+
+/* ═══ HUB RENDER ═══ */
 function renderHub(){
   const grid = document.getElementById('emd-grid');
-  grid.innerHTML = '';
+  grid.innerHTML='';
   EMD_LIST.forEach((e,i)=>{
     const div = document.createElement('div');
-    div.className = 'emd-card'+(e.ready?' ready':' dim');
-    div.dataset.name = e.name;
-    div.style.animationDelay = (i*0.04)+'s';
-    div.innerHTML = `
+    div.className='emd-card'+(e.ready?' ready':' dim');
+    div.dataset.name=e.name;
+    div.style.animationDelay=(i*.03)+'s';
+    div.innerHTML=`
       <div class="emd-ico">${ICONS[i]}</div>
       <div class="emd-nm">${e.name}</div>
       <div class="emd-pbar-wrap"><div class="emd-pbar" id="pb-${e.name}" style="width:0%"></div></div>
-      <div class="emd-pct${e.ready?'':' dim-txt'}" id="pct-${e.name}">${e.ready?'대기 중':'자료 준비 중'}</div>`;
+      <div class="emd-pct" id="pct-${e.name}" style="color:var(--sub)">${e.ready?'대기 중':'자료 준비 중'}</div>`;
     if(e.ready) div.addEventListener('click',()=>openEmd(e.name));
     grid.appendChild(div);
   });
 }
 
-function attachHubListeners(){
-  EMD_LIST.filter(e=>e.ready).forEach(e=>{
-    const ref = rtdb.ref('routes/'+e.name);
-    const cb = ref.on('value', snap=>{
-      if(!snap.exists()) return;
-      const routes = Object.values(snap.val());
-      const done = routes.filter(r=>r.status==='done').length;
-      const pct = routes.length ? Math.round(done/routes.length*100) : 0;
-      const pbar = document.getElementById('pb-'+e.name);
-      const pct_el = document.getElementById('pct-'+e.name);
-      if(pbar) pbar.style.width = pct+'%';
-      if(pct_el) pct_el.textContent = pct+'% 완료 ('+done+'/'+routes.length+')';
-    });
-    hubListeners[e.name] = {ref, cb};
-  });
-}
-
-function detachHubListeners(){
-  Object.values(hubListeners).forEach(({ref,cb})=>ref.off('value',cb));
-  hubListeners = {};
-}
-
 /* ═══ OPEN AREA ═══ */
-async function openEmd(name){
+function openEmd(name){
   const emd = EMD_LIST.find(e=>e.name===name);
   if(!emd||!emd.ready) return;
   curEmd = name;
 
-  document.getElementById('hub-panel').hidden = true;
-  document.getElementById('det-panel').hidden = false;
-  document.getElementById('back-btn').hidden = false;
-  document.getElementById('top-sub').textContent = name+' 제설 현황';
-  document.getElementById('det-nm').textContent = name;
+  document.getElementById('hub-panel').hidden=true;
+  document.getElementById('det-panel').hidden=false;
+  document.getElementById('back-btn').hidden=false;
+  document.getElementById('top-sub').textContent=name+' 제설 현황';
+  document.getElementById('det-nm').textContent=name;
 
-  try{
-    const r = await fetch(encodeURIComponent(name)+'.geojson');
-    if(!r.ok) throw new Error();
-    const geo = await r.json();
-    loadGeo(geo);
-  }catch(e){
-    showErr('노선 데이터를 불러올 수 없습니다');
+  /* highlight layers */
+  refreshMapOpacity();
+
+  if(mapData[name]){
+    renderRouteList(name);
+    const grp = L.featureGroup(mapData[name].layers);
+    map.flyToBounds(grp.getBounds(),{
+      paddingTopLeft:[20,60],
+      paddingBottomRight:[20,document.getElementById('bottom').offsetHeight+16],
+      duration:.8,
+    });
+  }else{
+    document.getElementById('route-list').innerHTML='<div style="padding:20px;text-align:center;color:var(--sub);font-size:.8rem">노선 데이터 없음</div>';
   }
+  updateDetProgress();
 
-  attachDetListener(name);
+  /* highlight active card */
+  document.querySelectorAll('.emd-card').forEach(c=>{
+    c.classList.toggle('active',c.dataset.name===name);
+  });
 }
 
 function goHub(){
-  curEmd = null;
-  detachDetListener();
-  clearLayers();
-  stopGps();
-  document.getElementById('det-panel').hidden = true;
-  document.getElementById('hub-panel').hidden = false;
-  document.getElementById('back-btn').hidden = true;
-  document.getElementById('top-sub').textContent = '담당 읍면동을 선택하세요';
-  map.flyTo([37.3,127.63],11,{duration:1});
+  curEmd=null;
+  document.getElementById('det-panel').hidden=true;
+  document.getElementById('hub-panel').hidden=false;
+  document.getElementById('back-btn').hidden=true;
+  document.getElementById('top-sub').textContent='전체 노선 현황';
+  document.querySelectorAll('.emd-card').forEach(c=>c.classList.remove('active'));
+  refreshMapOpacity();
+  map.flyTo([37.3,127.63],11,{duration:.8});
 }
 
-/* ═══ GEO / MAP ═══ */
-function loadGeo(geo){
-  clearLayers();
-  curRoutes = geo.features.map((f,i)=>({
-    id: f.properties.id ?? i+1,
-    name: f.properties.name||f.properties.nm||`노선 ${i+1}`,
-    road: f.properties.road||f.properties.도로명||f.properties.nm||'',
-    km: f.properties.km||f.properties.distance||0,
-    latlngs: f.geometry.coordinates.map(c=>[c[1],c[0]]),
-    color: COLORS[i%COLORS.length],
-    status:'waiting',
-    worker:'',
-  }));
-  geoLayers = curRoutes.map((r,i)=>{
-    const poly = L.polyline(r.latlngs,{color:r.color,weight:5,opacity:.85});
-    poly.on('click',()=>openSheet(r.id));
-    return poly.addTo(map);
-  });
-  if(geoLayers.length){
-    const grp = L.featureGroup(geoLayers);
-    map.flyToBounds(grp.getBounds(),{
-      paddingTopLeft:[20,60],paddingBottomRight:[20,document.getElementById('bottom').offsetHeight+20],
-      duration:1,
+function refreshMapOpacity(){
+  Object.entries(mapData).forEach(([emdName,md])=>{
+    const isSelected = curEmd===emdName;
+    const isHub = curEmd===null;
+    md.routes.forEach((r,i)=>{
+      const col = r.status==='done'?'#10b981':r.status==='working'?'#f59e0b':r.color;
+      md.layers[i].setStyle({
+        color:col,
+        weight: isSelected?5:4,
+        opacity: isHub
+          ? (r.status==='done'?.35:.7)
+          : isSelected
+            ? (r.status==='done'?.4:.9)
+            : .12,
+      });
     });
-  }
-  renderRouteList();
-}
-
-function clearLayers(){
-  geoLayers.forEach(l=>map.removeLayer(l));
-  geoLayers=[];
-  curRoutes=[];
-  document.getElementById('route-list').innerHTML='';
+  });
 }
 
 /* ═══ ROUTE LIST ═══ */
-function renderRouteList(){
-  const list = document.getElementById('route-list');
-  list.innerHTML = curRoutes.map(r=>`
-    <div class="r-item" data-id="${r.id}" onclick="openSheet(${r.id})">
-      <div class="r-dot" style="color:${r.color}"></div>
+function renderRouteList(name){
+  const md = mapData[name];
+  if(!md) return;
+  document.getElementById('route-list').innerHTML=md.routes.map(r=>`
+    <div class="r-item" onclick="openSheet(${r.id},'${name}')">
+      <div class="r-dot" style="color:${r.status==='done'?'#10b981':r.status==='working'?'#f59e0b':r.color}"></div>
       <div class="r-info">
         <div class="r-nm">${r.name}</div>
         <div class="r-road">${r.road}</div>
       </div>
-      <div class="r-km">${r.km?r.km.toFixed(1)+'km':''}</div>
-      <div class="status-badge ${r.status}" id="badge-${r.id}">${statusLabel(r.status)}</div>
+      ${r.km?`<div class="r-km">${r.km.toFixed(1)}km</div>`:''}
+      ${r.worker&&r.status==='working'?`<div class="r-wk">${r.worker}</div>`:''}
+      <div class="status-badge ${r.status}" id="badge-${name}-${r.id}">${sLabel(r.status)}</div>
     </div>`).join('');
-  updateProgress();
 }
 
-function updateRouteUI(id,status,worker){
-  const r = curRoutes.find(r=>r.id==id);
-  if(!r) return;
-  r.status=status;
-  r.worker=worker||'';
-  const badge = document.getElementById('badge-'+id);
-  if(badge){badge.className='status-badge '+status;badge.textContent=statusLabel(status);}
-  const poly = geoLayers[curRoutes.indexOf(r)];
-  if(poly) poly.setStyle({opacity:status==='done'?0.35:0.85});
-  updateProgress();
-}
-
-function updateProgress(){
-  const total = curRoutes.length;
-  const done = curRoutes.filter(r=>r.status==='done').length;
-  const pct = total?Math.round(done/total*100):0;
+function updateDetProgress(){
+  if(!curEmd||!mapData[curEmd]) return;
+  const routes = mapData[curEmd].routes;
+  const done = routes.filter(r=>r.status==='done').length;
+  const pct = routes.length?Math.round(done/routes.length*100):0;
   document.getElementById('prog-bar').style.width=pct+'%';
-  document.getElementById('prog-text').textContent=pct+'% ('+done+'/'+total+')';
+  document.getElementById('prog-text').textContent=pct+'% ('+done+'/'+routes.length+')';
 }
 
-function statusLabel(s){
-  return s==='waiting'?'대기':s==='working'?'작업중':'완료';
-}
-
-/* ═══ FIREBASE DET LISTENER ═══ */
-function attachDetListener(name){
-  detachDetListener();
-  const ref = rtdb.ref('routes/'+name);
-  detListener = {ref};
-  detListener.cb = ref.on('value', snap=>{
-    if(!snap.exists()) return;
-    Object.entries(snap.val()).forEach(([id,v])=>{
-      updateRouteUI(id,v.status||'waiting',v.worker);
-    });
-  });
-}
-function detachDetListener(){
-  if(detListener){detListener.ref.off('value',detListener.cb);detListener=null;}
-}
+function sLabel(s){return s==='waiting'?'대기':s==='working'?'작업중':'완료';}
 
 /* ═══ STATUS SHEET ═══ */
-function openSheet(id){
-  if(isLocked){openPw(()=>openSheet(id));return;}
-  const r = curRoutes.find(r=>r.id==id);
+function openSheet(id, emdName){
+  const name = emdName||curEmd;
+  if(!name) return;
+  if(isLocked){ openPw(()=>openSheet(id,name), name); return; }
+  const md = mapData[name];
+  if(!md) return;
+  const r = md.routes.find(r=>r.id==id);
   if(!r) return;
-  sheetRouteId = id;
-  document.getElementById('sheet-nm').textContent = r.name;
-  document.querySelectorAll('.sht-btn').forEach(b=>{
-    b.classList.toggle('active',b.dataset.s===r.status);
-  });
+  sheetRouteId=id; sheetEmd=name;
+  document.getElementById('sheet-nm').textContent=r.name;
+  document.querySelectorAll('.sht-btn').forEach(b=>b.classList.toggle('active',b.dataset.s===r.status));
   document.getElementById('status-sheet').classList.add('open');
-  document.getElementById('sheet-overlay').hidden = false;
+  document.getElementById('sheet-overlay').hidden=false;
 }
 function closeSheet(){
   document.getElementById('status-sheet').classList.remove('open');
-  document.getElementById('sheet-overlay').hidden = true;
-  sheetRouteId = null;
+  document.getElementById('sheet-overlay').hidden=true;
+  sheetRouteId=null; sheetEmd=null;
 }
-document.querySelectorAll('.sht-btn').forEach(b=>{
-  b.addEventListener('click',()=>{
-    if(sheetRouteId==null) return;
-    setStatus(sheetRouteId,b.dataset.s);
-    closeSheet();
+document.querySelectorAll('.sht-btn').forEach(b=>b.addEventListener('click',()=>{
+  if(sheetRouteId==null||!sheetEmd) return;
+  rtdb.ref('routes/'+sheetEmd+'/'+sheetRouteId).update({
+    status:b.dataset.s, worker:workerName, updatedAt:Date.now()
   });
-});
+  closeSheet();
+}));
 document.getElementById('sheet-cancel').addEventListener('click',closeSheet);
 document.getElementById('sheet-overlay').addEventListener('click',closeSheet);
 
-function setStatus(id,status){
-  if(!curEmd) return;
-  rtdb.ref('routes/'+curEmd+'/'+id).update({
-    status,worker:workerName,updatedAt:Date.now()
-  });
-}
-
 /* ═══ GPS ═══ */
-document.getElementById('gps-btn').addEventListener('click',toggleGps);
-function toggleGps(){
-  if(gpsOn){stopGps();return;}
-  if(!navigator.geolocation){alert('위치 서비스를 지원하지 않습니다');return;}
+document.getElementById('gps-btn').addEventListener('click',()=>{
+  if(gpsOn){
+    gpsOn=false;
+    document.getElementById('gps-btn').textContent='📍 위치';
+    document.getElementById('gps-btn').classList.remove('active');
+    if(gpsWatch!=null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;}
+    if(gpsMarker){map.removeLayer(gpsMarker);gpsMarker=null;}
+    return;
+  }
+  if(!navigator.geolocation){showErr('위치 서비스 미지원');return;}
   gpsOn=true;
   document.getElementById('gps-btn').textContent='📍 ON';
-  gpsWatch = navigator.geolocation.watchPosition(pos=>{
+  document.getElementById('gps-btn').classList.add('active');
+  gpsWatch=navigator.geolocation.watchPosition(pos=>{
     const ll=[pos.coords.latitude,pos.coords.longitude];
     if(gpsMarker) gpsMarker.setLatLng(ll);
-    else gpsMarker = L.circleMarker(ll,{radius:8,color:'#3b82f6',fillColor:'#3b82f6',fillOpacity:.8}).addTo(map);
-    map.panTo(ll);
-  },()=>stopGps(),{enableHighAccuracy:true});
-}
-function stopGps(){
-  gpsOn=false;
-  document.getElementById('gps-btn').textContent='📍 위치';
-  if(gpsWatch!=null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;}
-  if(gpsMarker){map.removeLayer(gpsMarker);gpsMarker=null;}
-}
+    else gpsMarker=L.circleMarker(ll,{radius:8,color:'#3b82f6',fillColor:'#3b82f6',fillOpacity:.85}).addTo(map);
+    if(!gpsMarker._prevSet){map.panTo(ll);gpsMarker._prevSet=true;}
+  },()=>{showErr('위치를 가져올 수 없습니다');gpsOn=false;document.getElementById('gps-btn').textContent='📍 위치';document.getElementById('gps-btn').classList.remove('active');},{enableHighAccuracy:true});
+});
 
 /* ═══ LOCK ═══ */
-document.getElementById('lock-btn').addEventListener('click',toggleLock);
-function toggleLock(){
-  if(isLocked) openPw(()=>{isLocked=false;document.getElementById('lock-btn').textContent='🔓 잠금해제';});
-  else{isLocked=true;document.getElementById('lock-btn').textContent='🔒 잠김';}
-}
+document.getElementById('lock-btn').addEventListener('click',()=>{
+  if(isLocked){
+    if(!curEmd){showErr('먼저 담당 읍면동을 선택하세요');return;}
+    openPw(()=>{
+      isLocked=false;
+      document.getElementById('lock-btn').textContent='🔓 해제됨';
+      document.getElementById('lock-btn').classList.add('active');
+    }, curEmd);
+  }else{
+    isLocked=true;
+    document.getElementById('lock-btn').textContent='🔒 잠김';
+    document.getElementById('lock-btn').classList.remove('active');
+  }
+});
 
 /* ═══ PW MODAL ═══ */
-let pwCallback = null;
-function openPw(cb){
+function openPw(cb, forEmd){
   pwCallback=cb;
+  pwEmd=forEmd||curEmd;
   document.getElementById('pw-input').value='';
+  document.getElementById('pw-input').placeholder='비밀번호 입력';
   document.getElementById('modal-pw').hidden=false;
-  setTimeout(()=>document.getElementById('pw-input').focus(),50);
+  setTimeout(()=>document.getElementById('pw-input').focus(),60);
+}
+function confirmPw(){
+  const val=document.getElementById('pw-input').value;
+  const emd=pwEmd||curEmd;
+  if(emd && PW[emd] && val===PW[emd]){
+    document.getElementById('modal-pw').hidden=true;
+    const cb=pwCallback; pwCallback=null; pwEmd=null;
+    if(cb) cb();
+  }else{
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').placeholder='❌ 비밀번호가 틀렸습니다';
+    setTimeout(()=>document.getElementById('pw-input').placeholder='비밀번호 입력',1800);
+  }
 }
 document.getElementById('pw-ok').addEventListener('click',confirmPw);
 document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPw();});
-document.getElementById('pw-cancel').addEventListener('click',()=>{document.getElementById('modal-pw').hidden=true;pwCallback=null;});
-function confirmPw(){
-  const val = document.getElementById('pw-input').value;
-  if(curEmd && val===PW[curEmd]){
-    document.getElementById('modal-pw').hidden=true;
-    if(pwCallback){pwCallback();pwCallback=null;}
-  }else{
-    document.getElementById('pw-input').value='';
-    document.getElementById('pw-input').placeholder='비밀번호가 틀렸습니다';
-    setTimeout(()=>document.getElementById('pw-input').placeholder='비밀번호 입력',1500);
-  }
-}
+document.getElementById('pw-cancel').addEventListener('click',()=>{
+  document.getElementById('modal-pw').hidden=true;
+  pwCallback=null; pwEmd=null;
+});
 
 /* ═══ NAME MODAL ═══ */
-document.getElementById('name-btn').addEventListener('click',openNameModal);
-function openNameModal(){
+document.getElementById('name-btn').addEventListener('click',()=>{
   document.getElementById('name-input').value=workerName;
   document.getElementById('modal-name').hidden=false;
-  setTimeout(()=>document.getElementById('name-input').focus(),50);
+  setTimeout(()=>document.getElementById('name-input').focus(),60);
+});
+function confirmName(){
+  const v=document.getElementById('name-input').value.trim();
+  if(!v) return;
+  workerName=v;
+  localStorage.setItem('wname',v);
+  document.getElementById('name-label').textContent=v;
+  document.getElementById('modal-name').hidden=true;
 }
 document.getElementById('name-ok').addEventListener('click',confirmName);
 document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmName();});
 document.getElementById('name-cancel').addEventListener('click',()=>document.getElementById('modal-name').hidden=true);
-function confirmName(){
-  const v = document.getElementById('name-input').value.trim();
-  if(!v) return;
-  workerName=v;
-  localStorage.setItem('wname',v);
-  document.getElementById('worker-label').textContent='이름: '+v;
-  document.getElementById('modal-name').hidden=true;
-}
 
 /* ═══ BACK / CONN ═══ */
 document.getElementById('back-btn').addEventListener('click',goHub);
 document.getElementById('conn-badge').addEventListener('click',()=>{
-  rtdb.ref('.info/connected').once('value',s=>{
-    alert(s.val()?'Firebase 연결됨':'연결 안됨');
-  });
+  rtdb.ref('.info/connected').once('value',s=>alert(s.val()?'✅ Firebase 연결됨':'❌ 연결 안됨'));
 });
 
 /* ═══ ERR ═══ */
+let errTimer=null;
 function showErr(msg){
-  document.getElementById('err-msg').textContent=msg;
-  document.getElementById('err-bar').hidden=false;
-  setTimeout(()=>document.getElementById('err-bar').hidden=true,4000);
+  const el=document.getElementById('err-bar');
+  el.textContent=msg; el.hidden=false;
+  if(errTimer) clearTimeout(errTimer);
+  errTimer=setTimeout(()=>el.hidden=true,3500);
 }
 
 /* ═══ INIT ═══ */
-if(workerName) document.getElementById('worker-label').textContent='이름: '+workerName;
+if(workerName) document.getElementById('name-label').textContent=workerName;
 renderHub();
-attachHubListeners();
+loadAllGeo().then(()=>{
+  attachAllFirebase();
+});
 </script>
 </body>
 </html>
